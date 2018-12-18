@@ -7,6 +7,7 @@ from model import TCN
 from preprocess import data_generator
 from preprocess import stage_dataset
 import numpy as np
+import time
 
 
 parser = argparse.ArgumentParser(description='Sequence Modeling - Polyphonic Music')
@@ -110,6 +111,7 @@ def train(ep):
     count = 0
     train_idx_list = np.arange(len(train_features), dtype="int32")
     #np.random.shuffle(train_idx_list)
+    t0 = time.time()
     for idx in train_idx_list:
         #data_line = X_train[idx]
         #print(data_line.size())
@@ -140,7 +142,8 @@ def train(ep):
             optimizer.step()
         if idx > 0 and idx % args.log_interval == 0:
             cur_loss = total_loss / count
-            print("Epoch {:2d} | lr {:.5f} | loss {:.5f}".format(ep, lr, cur_loss))
+            print("Epoch {:2d} | lr {:.5f} | loss {:.5f} | elapsed time {} seconds".format(ep, lr, cur_loss, time.time() - t0))
+            t0 = time.time()
             total_loss = 0.0
             count = 0
 

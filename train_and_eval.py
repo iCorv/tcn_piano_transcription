@@ -80,10 +80,10 @@ def evaluate(X_data, Y_data):
         if args.cuda:
             x, y = x.cuda(), y.cuda()
         output = model(x.unsqueeze(0)).squeeze(0)
-        loss = -torch.trace(torch.matmul(y, torch.log(output).float().t()) +
-                            torch.matmul((1-y), torch.log(1-output).float().t()))
+        #loss = -torch.trace(torch.matmul(y, torch.log(output).float().t()) +
+        #                    torch.matmul((1-y), torch.log(1-output).float().t()))
 
-        #loss = log_loss(y, output)
+        loss = log_loss(y, output)
         tp, fp, tn, fn = eval_framewise(output, y)
         total_tp += tp
         total_fp += fp
@@ -117,9 +117,9 @@ def train(ep):
 
         optimizer.zero_grad()
         output = model(x.unsqueeze(0)).squeeze(0)
-        loss = -torch.trace(torch.matmul(y, torch.log(output).float().t()) +
-                            torch.matmul((1 - y), torch.log(1 - output).float().t()))
-        #loss = log_loss(y, output)
+        #loss = -torch.trace(torch.matmul(y, torch.log(output).float().t()) +
+        #                    torch.matmul((1 - y), torch.log(1 - output).float().t()))
+        loss = log_loss(y, output)
         total_loss += loss.item()
         count += output.size(0)
 

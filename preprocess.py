@@ -3,13 +3,13 @@ from scipy.io import savemat
 import torch
 import numpy as np
 import glob
-import madmom
+#import madmom
 import os
 import configurations.preprocessing_parameters as ppp
 import warnings
 from joblib import Parallel, delayed
 import multiprocessing
-from madmom.io import midi
+#from madmom.io import midi
 from enum import Enum
 warnings.filterwarnings("ignore")
 

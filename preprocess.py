@@ -174,10 +174,10 @@ def stage_dataset():
         data = loadmat(file)
         # train_features.append(data["features"])
         tensor_features = torch.Tensor(data["features"].astype(np.float64))
-        train_features.extend(tensor_features.split(250, dim=0))
+        valid_features.extend(tensor_features.split(250, dim=0))
         # train_labels.append(data["labels"])
         tensor_labels = torch.Tensor(data["labels"].astype(np.float64))
-        train_labels.extend(tensor_labels.split(250, dim=0))
+        valid_labels.extend(tensor_labels.split(250, dim=0))
 
     #for data in [train_features, train_labels, valid_features, valid_labels]:
     #    for i in range(len(data)):

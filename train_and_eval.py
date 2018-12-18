@@ -5,6 +5,7 @@ from torch.autograd import Variable
 import torch.optim as optim
 from model import TCN
 from preprocess import data_generator
+from preprocess import stage_dataset
 import numpy as np
 
 
@@ -13,7 +14,7 @@ parser.add_argument('--cuda', action='store_false',
                     help='use CUDA (default: True)')
 parser.add_argument('--dropout', type=float, default=0.25,
                     help='dropout applied to layers (default: 0.25)')
-parser.add_argument('--clip', type=float, default=0.2,
+parser.add_argument('--clip', type=float, default=1e-7,
                     help='gradient clip, -1 means no clip (default: 0.2)')
 parser.add_argument('--epochs', type=int, default=100,
                     help='upper epoch limit (default: 100)')
@@ -21,7 +22,7 @@ parser.add_argument('--ksize', type=int, default=5,
                     help='kernel size (default: 5)')
 parser.add_argument('--levels', type=int, default=4,
                     help='# of levels (default: 4)')
-parser.add_argument('--log-interval', type=int, default=100, metavar='N',
+parser.add_argument('--log-interval', type=int, default=1, metavar='N',
                     help='report interval (default: 100')
 parser.add_argument('--lr', type=float, default=1e-3,
                     help='initial learning rate (default: 1e-3)')
@@ -44,7 +45,8 @@ if torch.cuda.is_available():
 
 print(args)
 input_size = 88
-X_train, X_valid, X_test = data_generator(args.data)
+#X_train, X_valid, X_test = data_generator(args.data)
+train_features, train_labels, valid_features, valid_labels = stage_dataset()
 
 n_channels = [args.nhid] * args.levels
 kernel_size = args.ksize
@@ -61,23 +63,38 @@ lr = args.lr
 optimizer = getattr(optim, args.optim)(model.parameters(), lr=lr)
 
 
-def evaluate(X_data):
+def evaluate(X_data, Y_data):
     model.eval()
     eval_idx_list = np.arange(len(X_data), dtype="int32")
     total_loss = 0.0
     count = 0
+    total_tp = 0
+    total_fp = 0
+    total_tn = 0
+    total_fn = 0
     for idx in eval_idx_list:
-        data_line = X_data[idx]
-        x, y = Variable(data_line[:-1]), Variable(data_line[1:])
+        #data_line = X_data[idx]
+        #x, y = Variable(data_line[:-1]), Variable(data_line[1:])
+        x = Variable(X_data[idx])
+        y = Variable(Y_data[idx])
         if args.cuda:
             x, y = x.cuda(), y.cuda()
         output = model(x.unsqueeze(0)).squeeze(0)
         loss = -torch.trace(torch.matmul(y, torch.log(output).float().t()) +
                             torch.matmul((1-y), torch.log(1-output).float().t()))
+
+        #loss = log_loss(y, output)
+        tp, fp, tn, fn = eval_framewise(output, y)
+        total_tp += tp
+        total_fp += fp
+        total_tn += tn
+        total_fn += fn
         total_loss += loss.item()
         count += output.size(0)
+    p, r, f1, a = prf_framewise(total_tp, total_fp, total_tn, total_fn)
     eval_loss = total_loss / count
     print("Validation/Test loss: {:.5f}".format(eval_loss))
+    print("P: {:.5f} / R: {:.5f} / F1: {:.5f} / A: {:.5f}".format(p, r, f1, a))
     return eval_loss
 
 
@@ -85,11 +102,16 @@ def train(ep):
     model.train()
     total_loss = 0
     count = 0
-    train_idx_list = np.arange(len(X_train), dtype="int32")
-    np.random.shuffle(train_idx_list)
+    train_idx_list = np.arange(len(train_features), dtype="int32")
+    #np.random.shuffle(train_idx_list)
     for idx in train_idx_list:
-        data_line = X_train[idx]
-        x, y = Variable(data_line[:-1]), Variable(data_line[1:])
+        #data_line = X_train[idx]
+        #print(data_line.size())
+        #x, y = Variable(data_line[:-1]), Variable(data_line[1:])
+        x = Variable(train_features[idx])
+        y = Variable(train_labels[idx])
+        #print(x.size())
+        #print(y.size())
         if args.cuda:
             x, y = x.cuda(), y.cuda()
 
@@ -97,6 +119,7 @@ def train(ep):
         output = model(x.unsqueeze(0)).squeeze(0)
         loss = -torch.trace(torch.matmul(y, torch.log(output).float().t()) +
                             torch.matmul((1 - y), torch.log(1 - output).float().t()))
+        #loss = log_loss(y, output)
         total_loss += loss.item()
         count += output.size(0)
 
@@ -111,14 +134,77 @@ def train(ep):
             count = 0
 
 
+def log_loss(labels, predictions, epsilon=1e-7, weights=None):
+    """Calculate log loss.
+        Args:
+            labels: The ground truth output tensor, same dimensions as 'predictions'.
+            predictions: The predicted outputs.
+            epsilon: A small increment to add to avoid taking a log of zero.
+            weights: Weights to apply to labels.
+        Returns:
+            A `Tensor` representing the loss values.
+    """
+
+    losses = -torch.mul(labels, torch.log(predictions + epsilon).float()) - torch.mul(
+        (1 - labels), torch.log(1 - predictions + epsilon).float())
+    if weights is not None:
+        losses = torch.mul(losses, weights)
+
+    return torch.mean(losses)
+
+
+def eval_framewise(predictions, targets, thresh=0.5):
+    """
+    author: filip (+ data-format amendments by rainer)
+    """
+    if predictions.shape != targets.shape:
+        raise ValueError('predictions.shape {} != targets.shape {} !'.format(predictions.shape, targets.shape))
+
+    pred = predictions > thresh
+    targ = targets > thresh
+
+    tp = pred & targ
+    fp = pred ^ tp
+    fn = targ ^ tp
+
+    # tp, fp, tn, fn
+    return tp.sum(), fp.sum(), 0, fn.sum()
+
+
+def prf_framewise(tp, fp, tn, fn):
+    tp, fp, tn, fn = float(tp), float(fp), float(tn), float(fn)
+
+    if tp + fp == 0.:
+        p = 0.
+    else:
+        p = tp / (tp + fp)
+
+    if tp + fn == 0.:
+        r = 0.
+    else:
+        r = tp / (tp + fn)
+
+    if p + r == 0.:
+        f = 0.
+    else:
+        f = 2 * ((p * r) / (p + r))
+
+    if tp + fp + fn == 0.:
+        a = 0.
+    else:
+        a = tp / (tp + fp + fn)
+
+    return p, r, f, a
+
+
 if __name__ == "__main__":
     best_vloss = 1e8
     vloss_list = []
     model_name = "poly_music_{0}.pt".format(args.data)
     for ep in range(1, args.epochs+1):
         train(ep)
-        vloss = evaluate(X_valid)
-        tloss = evaluate(X_test)
+        vloss = evaluate(valid_features, valid_labels)
+        #tloss = evaluate(X_test)
         if vloss < best_vloss:
             with open(model_name, "wb") as f:
                 torch.save(model, f)
@@ -132,5 +218,5 @@ if __name__ == "__main__":
         vloss_list.append(vloss)
 
     print('-' * 89)
-    model = torch.load(open(model_name, "rb"))
-    tloss = evaluate(X_test)
+    #model = torch.load(open(model_name, "rb"))
+    #tloss = evaluate(X_test)

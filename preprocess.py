@@ -156,8 +156,8 @@ def write_file_to_tfrecords(write_file, base_dir, read_file, audio_config, norm,
 
 
 def stage_dataset():
-    train_files = glob.glob("./dataset/sigtia-configuration2-splits/fold_benchmark/train/*.mat")
-    valid_files = glob.glob("./dataset/sigtia-configuration2-splits/fold_benchmark/valid/*.mat")
+    train_files = glob.glob("./dataset/sigtia-configuration2-splits/fold_1/train/*.mat")
+    valid_files = glob.glob("./dataset/sigtia-configuration2-splits/fold_1/valid/*.mat")
     train_features = []
     train_labels = []
     valid_features = []

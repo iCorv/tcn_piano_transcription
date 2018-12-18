@@ -99,6 +99,7 @@ def evaluate(X_data, Y_data):
         total_loss += loss.item()
         count += output.size(0)
 
+
     p, r, f1, a = prf_framewise(total_tp, total_fp, total_tn, total_fn)
     eval_loss = total_loss / count
     print("Validation/Test loss: {:.5f}".format(eval_loss))

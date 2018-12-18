@@ -18,11 +18,11 @@ parser.add_argument('--clip', type=float, default=1e-7,
                     help='gradient clip, -1 means no clip (default: 0.2)')
 parser.add_argument('--epochs', type=int, default=100,
                     help='upper epoch limit (default: 100)')
-parser.add_argument('--ksize', type=int, default=5,
+parser.add_argument('--ksize', type=int, default=3,
                     help='kernel size (default: 5)')
 parser.add_argument('--levels', type=int, default=4,
                     help='# of levels (default: 4)')
-parser.add_argument('--log-interval', type=int, default=1, metavar='N',
+parser.add_argument('--log-interval', type=int, default=10, metavar='N',
                     help='report interval (default: 100')
 parser.add_argument('--lr', type=float, default=1e-3,
                     help='initial learning rate (default: 1e-3)')
@@ -75,22 +75,28 @@ def evaluate(X_data, Y_data):
     for idx in eval_idx_list:
         #data_line = X_data[idx]
         #x, y = Variable(data_line[:-1]), Variable(data_line[1:])
-        x = Variable(X_data[idx])
-        y = Variable(Y_data[idx])
-        if args.cuda:
-            x, y = x.cuda(), y.cuda()
-        output = model(x.unsqueeze(0)).squeeze(0)
-        #loss = -torch.trace(torch.matmul(y, torch.log(output).float().t()) +
-        #                    torch.matmul((1-y), torch.log(1-output).float().t()))
+        #x = Variable(X_data[idx])
+        #y = Variable(Y_data[idx])
+        features_split = X_data[idx].split(250, dim=0)
+        labels_split = Y_data[idx].split(250, dim=0)
+        split_idx_list = np.arange(len(features_split), dtype="int32")
+        for split_idx in split_idx_list:
+            x = Variable(features_split[split_idx])
+            y = Variable(labels_split[split_idx])
+            if args.cuda:
+                x, y = x.cuda(), y.cuda()
+            output = model(x.unsqueeze(0)).squeeze(0)
+            #loss = -torch.trace(torch.matmul(y, torch.log(output).float().t()) +
+            #                    torch.matmul((1-y), torch.log(1-output).float().t()))
 
-        loss = log_loss(y, output)
-        tp, fp, tn, fn = eval_framewise(output, y)
-        total_tp += tp
-        total_fp += fp
-        total_tn += tn
-        total_fn += fn
-        total_loss += loss.item()
-        count += output.size(0)
+            loss = log_loss(y, output)
+            tp, fp, tn, fn = eval_framewise(output, y)
+            total_tp += tp
+            total_fp += fp
+            total_tn += tn
+            total_fn += fn
+            total_loss += loss.item()
+            count += output.size(0)
     p, r, f1, a = prf_framewise(total_tp, total_fp, total_tn, total_fn)
     eval_loss = total_loss / count
     print("Validation/Test loss: {:.5f}".format(eval_loss))
@@ -108,25 +114,30 @@ def train(ep):
         #data_line = X_train[idx]
         #print(data_line.size())
         #x, y = Variable(data_line[:-1]), Variable(data_line[1:])
-        x = Variable(train_features[idx])
-        y = Variable(train_labels[idx])
-        #print(x.size())
-        #print(y.size())
-        if args.cuda:
-            x, y = x.cuda(), y.cuda()
+        #x = Variable(train_features[idx])
+        #y = Variable(train_labels[idx])
 
-        optimizer.zero_grad()
-        output = model(x.unsqueeze(0)).squeeze(0)
-        #loss = -torch.trace(torch.matmul(y, torch.log(output).float().t()) +
-        #                    torch.matmul((1 - y), torch.log(1 - output).float().t()))
-        loss = log_loss(y, output)
-        total_loss += loss.item()
-        count += output.size(0)
+        features_split = train_features[idx].split(250, dim=0)
+        labels_split = train_labels[idx].split(250, dim=0)
+        split_idx_list = np.arange(len(features_split), dtype="int32")
+        for split_idx in split_idx_list:
+            x = Variable(features_split[split_idx])
+            y = Variable(labels_split[split_idx])
+            if args.cuda:
+                x, y = x.cuda(), y.cuda()
 
-        if args.clip > 0:
-            torch.nn.utils.clip_grad_norm(model.parameters(), args.clip)
-        loss.backward()
-        optimizer.step()
+            optimizer.zero_grad()
+            output = model(x.unsqueeze(0)).squeeze(0)
+            #loss = -torch.trace(torch.matmul(y, torch.log(output).float().t()) +
+            #                    torch.matmul((1 - y), torch.log(1 - output).float().t()))
+            loss = log_loss(y, output)
+            total_loss += loss.item()
+            count += output.size(0)
+
+            if args.clip > 0:
+                torch.nn.utils.clip_grad_norm(model.parameters(), args.clip)
+            loss.backward()
+            optimizer.step()
         if idx > 0 and idx % args.log_interval == 0:
             cur_loss = total_loss / count
             print("Epoch {:2d} | lr {:.5f} | loss {:.5f}".format(ep, lr, cur_loss))

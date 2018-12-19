@@ -21,7 +21,7 @@ parser.add_argument('--epochs', type=int, default=100,
                     help='upper epoch limit (default: 100)')
 parser.add_argument('--ksize', type=int, default=3,
                     help='kernel size (default: 5)')
-parser.add_argument('--levels', type=int, default=5,
+parser.add_argument('--levels', type=int, default=4,
                     help='# of levels (default: 4)')
 parser.add_argument('--log-interval', type=int, default=1000, metavar='N',
                     help='report interval (default: 100')
@@ -76,8 +76,8 @@ def evaluate(X_data, Y_data):
     for idx in eval_idx_list:
         #data_line = X_data[idx]
         #x, y = Variable(data_line[:-1]), Variable(data_line[1:])
-        x = Variable(X_data[idx])
-        y = Variable(Y_data[idx])
+        x = Variable(X_data[idx][1:])
+        y = Variable(Y_data[idx][:-1])
         #features_split = X_data[idx].split(250, dim=0)
         #labels_split = Y_data[idx].split(250, dim=0)
         #split_idx_list = np.arange(len(features_split), dtype="int32")

@@ -19,13 +19,13 @@ parser.add_argument('--clip', type=float, default=1e-7,
                     help='gradient clip, -1 means no clip (default: 0.2)')
 parser.add_argument('--epochs', type=int, default=100,
                     help='upper epoch limit (default: 100)')
-parser.add_argument('--ksize', type=int, default=5,
+parser.add_argument('--ksize', type=int, default=3,
                     help='kernel size (default: 5)')
-parser.add_argument('--levels', type=int, default=4,
+parser.add_argument('--levels', type=int, default=5,
                     help='# of levels (default: 4)')
-parser.add_argument('--log-interval', type=int, default=100, metavar='N',
+parser.add_argument('--log-interval', type=int, default=1000, metavar='N',
                     help='report interval (default: 100')
-parser.add_argument('--lr', type=float, default=1e-3,
+parser.add_argument('--lr', type=float, default=1e-2,
                     help='initial learning rate (default: 1e-3)')
 parser.add_argument('--optim', type=str, default='Adam',
                     help='optimizer to use (default: Adam)')

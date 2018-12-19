@@ -156,8 +156,9 @@ def write_file_to_tfrecords(write_file, base_dir, read_file, audio_config, norm,
 
 
 def stage_dataset():
-    train_files = glob.glob("./dataset/sigtia-configuration2-splits/fold_1/train/*.mat")
-    valid_files = glob.glob("./dataset/sigtia-configuration2-splits/fold_1/valid/*.mat")
+    chunk = 256
+    train_files = glob.glob("./dataset/sigtia-configuration2-splits/fold_benchmark/train/*.mat")
+    valid_files = glob.glob("./dataset/sigtia-configuration2-splits/fold_benchmark/valid/*.mat")
     train_features = []
     train_labels = []
     valid_features = []
@@ -166,18 +167,18 @@ def stage_dataset():
         data = loadmat(file)
         #train_features.append(data["features"])
         tensor_features = torch.Tensor(data["features"].astype(np.float64))
-        train_features.extend(tensor_features.split(250, dim=0))
+        train_features.extend(tensor_features.split(chunk, dim=0))
         #train_labels.append(data["labels"])
         tensor_labels = torch.Tensor(data["labels"].astype(np.float64))
-        train_labels.extend(tensor_labels.split(250, dim=0))
+        train_labels.extend(tensor_labels.split(chunk, dim=0))
     for file in valid_files:
         data = loadmat(file)
         # train_features.append(data["features"])
         tensor_features = torch.Tensor(data["features"].astype(np.float64))
-        valid_features.extend(tensor_features.split(250, dim=0))
+        valid_features.extend(tensor_features.split(chunk, dim=0))
         # train_labels.append(data["labels"])
         tensor_labels = torch.Tensor(data["labels"].astype(np.float64))
-        valid_labels.extend(tensor_labels.split(250, dim=0))
+        valid_labels.extend(tensor_labels.split(chunk, dim=0))
 
     #for data in [train_features, train_labels, valid_features, valid_labels]:
     #    for i in range(len(data)):

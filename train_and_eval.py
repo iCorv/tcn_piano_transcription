@@ -15,7 +15,7 @@ parser.add_argument('--cuda', action='store_false',
                     help='use CUDA (default: True)')
 parser.add_argument('--dropout', type=float, default=0.25,
                     help='dropout applied to layers (default: 0.25)')
-parser.add_argument('--clip', type=float, default=1e-7,
+parser.add_argument('--clip', type=float, default=0.2,
                     help='gradient clip, -1 means no clip (default: 0.2)')
 parser.add_argument('--epochs', type=int, default=100,
                     help='upper epoch limit (default: 100)')
@@ -23,16 +23,16 @@ parser.add_argument('--ksize', type=int, default=5,
                     help='kernel size (default: 5)')
 parser.add_argument('--levels', type=int, default=4,
                     help='# of levels (default: 4)')
-parser.add_argument('--log-interval', type=int, default=1000, metavar='N',
+parser.add_argument('--log-interval', type=int, default=100, metavar='N',
                     help='report interval (default: 100')
-parser.add_argument('--lr', type=float, default=1e-2,
+parser.add_argument('--lr', type=float, default=1e-3,
                     help='initial learning rate (default: 1e-3)')
 parser.add_argument('--optim', type=str, default='Adam',
                     help='optimizer to use (default: Adam)')
 parser.add_argument('--nhid', type=int, default=150,
                     help='number of hidden units per layer (default: 150)')
-parser.add_argument('--data', type=str, default='Nott',
-                    help='the dataset to run (default: Nott)')
+parser.add_argument('--data', type=str, default='MAPS_fold_1',
+                    help='the dataset to run (default: MAPS_fold_1)')
 parser.add_argument('--seed', type=int, default=1111,
                     help='random seed (default: 1111)')
 
@@ -47,7 +47,7 @@ if torch.cuda.is_available():
 print(args)
 input_size = 88
 #X_train, X_valid, X_test = data_generator(args.data)
-train_features, train_labels, valid_features, valid_labels = stage_dataset()
+train_features, train_labels, valid_features, valid_labels, test_features, test_labels = stage_dataset()
 
 n_channels = [args.nhid] * args.levels
 kernel_size = args.ksize
@@ -76,8 +76,8 @@ def evaluate(X_data, Y_data):
     for idx in eval_idx_list:
         #data_line = X_data[idx]
         #x, y = Variable(data_line[:-1]), Variable(data_line[1:])
-        x = Variable(X_data[idx][1:])
-        y = Variable(Y_data[idx][:-1])
+        x = Variable(X_data[idx])
+        y = Variable(Y_data[idx])
         #features_split = X_data[idx].split(250, dim=0)
         #labels_split = Y_data[idx].split(250, dim=0)
         #split_idx_list = np.arange(len(features_split), dtype="int32")
@@ -99,7 +99,6 @@ def evaluate(X_data, Y_data):
         total_loss += loss.item()
         count += output.size(0)
 
-
     p, r, f1, a = prf_framewise(total_tp, total_fp, total_tn, total_fn)
     eval_loss = total_loss / count
     print("Validation/Test loss: {:.5f}".format(eval_loss))
@@ -116,7 +115,7 @@ def train(ep):
     t0 = time.time()
     for idx in train_idx_list:
         #data_line = X_train[idx]
-        #print(data_line.size())
+        #print(train_features[idx].size())
         #x, y = Variable(data_line[:-1]), Variable(data_line[1:])
         x = Variable(train_features[idx])
         y = Variable(train_labels[idx])
@@ -171,7 +170,7 @@ def log_loss(labels, predictions, epsilon=1e-7, weights=None):
 
 def eval_framewise(predictions, targets, thresh=0.5):
     """
-    author: filip (+ data-format amendments by rainer)
+    
     """
     if predictions.shape != targets.shape:
         raise ValueError('predictions.shape {} != targets.shape {} !'.format(predictions.shape, targets.shape))
@@ -216,11 +215,11 @@ def prf_framewise(tp, fp, tn, fn):
 if __name__ == "__main__":
     best_vloss = 1e8
     vloss_list = []
-    model_name = "poly_music_{0}.pt".format(args.data)
+    model_name = "MAPS_fold_1_{0}.pt".format(args.data)
     for ep in range(1, args.epochs+1):
         train(ep)
         vloss = evaluate(valid_features, valid_labels)
-        #tloss = evaluate(X_test)
+        tloss = evaluate(test_features, test_labels)
         if vloss < best_vloss:
             with open(model_name, "wb") as f:
                 torch.save(model, f)
@@ -234,5 +233,5 @@ if __name__ == "__main__":
         vloss_list.append(vloss)
 
     print('-' * 89)
-    #model = torch.load(open(model_name, "rb"))
-    #tloss = evaluate(X_test)
+    model = torch.load(open(model_name, "rb"))
+    tloss = evaluate(test_features, test_labels)

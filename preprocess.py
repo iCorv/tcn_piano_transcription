@@ -159,10 +159,13 @@ def stage_dataset():
     chunk = 256
     train_files = glob.glob("./dataset/sigtia-configuration2-splits/fold_1/train/*.mat")
     valid_files = glob.glob("./dataset/sigtia-configuration2-splits/fold_1/valid/*.mat")
+    test_files = glob.glob("./dataset/sigtia-configuration2-splits/fold_1/test/*.mat")
     train_features = []
     train_labels = []
     valid_features = []
     valid_labels = []
+    test_features = []
+    test_labels = []
     for file in train_files:
         data = loadmat(file)
         #train_features.append(data["features"])
@@ -179,12 +182,20 @@ def stage_dataset():
         # train_labels.append(data["labels"])
         tensor_labels = torch.Tensor(data["labels"].astype(np.float64))
         valid_labels.extend(tensor_labels.split(chunk, dim=0))
+    for file in test_files:
+        data = loadmat(file)
+        # train_features.append(data["features"])
+        tensor_features = torch.Tensor(data["features"].astype(np.float64))
+        test_features.extend(tensor_features.split(chunk, dim=0))
+        # train_labels.append(data["labels"])
+        tensor_labels = torch.Tensor(data["labels"].astype(np.float64))
+        test_labels.extend(tensor_labels.split(chunk, dim=0))
 
     #for data in [train_features, train_labels, valid_features, valid_labels]:
     #    for i in range(len(data)):
     #        data[i] = torch.Tensor(data[i].astype(np.float64))
 
-    return train_features, train_labels, valid_features, valid_labels
+    return train_features, train_labels, valid_features, valid_labels, test_features, test_labels
 
 
 def data_generator(dataset):

@@ -170,7 +170,7 @@ def log_loss(labels, predictions, epsilon=1e-7, weights=None):
 
 def eval_framewise(predictions, targets, thresh=0.5):
     """
-    
+
     """
     if predictions.shape != targets.shape:
         raise ValueError('predictions.shape {} != targets.shape {} !'.format(predictions.shape, targets.shape))
@@ -215,7 +215,7 @@ def prf_framewise(tp, fp, tn, fn):
 if __name__ == "__main__":
     best_vloss = 1e8
     vloss_list = []
-    model_name = "MAPS_fold_1_{0}.pt".format(args.data)
+    model_name = "piano_transcription_{0}.pt".format(args.data)
     for ep in range(1, args.epochs+1):
         train(ep)
         vloss = evaluate(valid_features, valid_labels)

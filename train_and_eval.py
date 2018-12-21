@@ -23,7 +23,7 @@ parser.add_argument('--ksize', type=int, default=5,
                     help='kernel size (default: 5)')
 parser.add_argument('--levels', type=int, default=4,
                     help='# of levels (default: 4)')
-parser.add_argument('--log-interval', type=int, default=1000, metavar='N',
+parser.add_argument('--log-interval', type=int, default=100, metavar='N',
                     help='report interval (default: 100')
 parser.add_argument('--lr', type=float, default=1e-3,
                     help='initial learning rate (default: 1e-3)')
@@ -78,19 +78,14 @@ def evaluate(X_data, Y_data):
         #x, y = Variable(data_line[:-1]), Variable(data_line[1:])
         x = Variable(X_data[idx])
         y = Variable(Y_data[idx])
-        #features_split = X_data[idx].split(250, dim=0)
-        #labels_split = Y_data[idx].split(250, dim=0)
-        #split_idx_list = np.arange(len(features_split), dtype="int32")
-        #for split_idx in split_idx_list:
-            #x = Variable(features_split[split_idx])
-            #y = Variable(labels_split[split_idx])
+
         if args.cuda:
             x, y = x.cuda(), y.cuda()
         output = model(x.unsqueeze(0)).squeeze(0)
-        #loss = -torch.trace(torch.matmul(y, torch.log(output).float().t()) +
-        #                    torch.matmul((1-y), torch.log(1-output).float().t()))
+        loss = -torch.trace(torch.matmul(y, torch.log(output).float().t()) +
+                            torch.matmul((1-y), torch.log(1-output).float().t()))
 
-        loss = log_loss(y, output)
+        #loss = log_loss(y, output)
         tp, fp, tn, fn = eval_framewise(output, y)
         total_tp += tp
         total_fp += fp
@@ -111,7 +106,9 @@ def train(ep):
     total_loss = 0
     count = 0
     train_idx_list = np.arange(len(train_features), dtype="int32")
-    #np.random.shuffle(train_idx_list)
+
+    np.random.shuffle(train_idx_list)
+
     t0 = time.time()
     for idx in train_idx_list:
         #data_line = X_train[idx]
@@ -120,20 +117,15 @@ def train(ep):
         x = Variable(train_features[idx])
         y = Variable(train_labels[idx])
 
-        #features_split = train_features[idx].split(250, dim=0)
-        #labels_split = train_labels[idx].split(250, dim=0)
-        #split_idx_list = np.arange(len(features_split), dtype="int32")
-        #for split_idx in split_idx_list:
-            #x = Variable(features_split[split_idx])
-            #y = Variable(labels_split[split_idx])
+
         if args.cuda:
             x, y = x.cuda(), y.cuda()
 
         optimizer.zero_grad()
         output = model(x.unsqueeze(0)).squeeze(0)
-        #loss = -torch.trace(torch.matmul(y, torch.log(output).float().t()) +
-        #                    torch.matmul((1 - y), torch.log(1 - output).float().t()))
-        loss = log_loss(y, output)
+        loss = -torch.trace(torch.matmul(y, torch.log(output).float().t()) +
+                            torch.matmul((1 - y), torch.log(1 - output).float().t()))
+        #loss = log_loss(y, output)
         total_loss += loss.item()
         count += output.size(0)
 

@@ -25,7 +25,7 @@ parser.add_argument('--levels', type=int, default=4,
                     help='# of levels (default: 4)')
 parser.add_argument('--log-interval', type=int, default=100, metavar='N',
                     help='report interval (default: 100')
-parser.add_argument('--lr', type=float, default=1e-2,
+parser.add_argument('--lr', type=float, default=1e-3,
                     help='initial learning rate (default: 1e-3)')
 parser.add_argument('--optim', type=str, default='Adam',
                     help='optimizer to use (default: Adam)')
@@ -87,10 +87,10 @@ def evaluate(X_data, Y_data):
         if args.cuda:
             x, y = x.cuda(), y.cuda()
         output = model(x.unsqueeze(0)).squeeze(0)
-        loss = -torch.trace(torch.matmul(y, torch.log(output).float().t()) +
-                            torch.matmul((1-y), torch.log(1-output).float().t()))
+        #loss = -torch.trace(torch.matmul(y, torch.log(output).float().t()) +
+        #                    torch.matmul((1-y), torch.log(1-output).float().t()))
 
-        #loss = log_loss(y, output)
+        loss = log_loss(y, output)
         tp, fp, tn, fn = eval_framewise(output, y)
         p, r, f1, a = prf_framewise(tp, fp, tn, fn)
         total_p += p
@@ -134,9 +134,9 @@ def train(ep):
 
         optimizer.zero_grad()
         output = model(x.unsqueeze(0)).squeeze(0)
-        loss = -torch.trace(torch.matmul(y, torch.log(output).float().t()) +
-                            torch.matmul((1 - y), torch.log(1 - output).float().t()))
-        #loss = log_loss(y, output)
+        #loss = -torch.trace(torch.matmul(y, torch.log(output).float().t()) +
+        #                    torch.matmul((1 - y), torch.log(1 - output).float().t()))
+        loss = log_loss(y, output)
         total_loss += loss.item()
         count += output.size(0)
 

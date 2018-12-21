@@ -25,7 +25,7 @@ parser.add_argument('--levels', type=int, default=4,
                     help='# of levels (default: 4)')
 parser.add_argument('--log-interval', type=int, default=100, metavar='N',
                     help='report interval (default: 100')
-parser.add_argument('--lr', type=float, default=1e-3,
+parser.add_argument('--lr', type=float, default=1e-2,
                     help='initial learning rate (default: 1e-3)')
 parser.add_argument('--optim', type=str, default='Adam',
                     help='optimizer to use (default: Adam)')
@@ -35,6 +35,7 @@ parser.add_argument('--data', type=str, default='MAPS_fold_1',
                     help='the dataset to run (default: MAPS_fold_1)')
 parser.add_argument('--seed', type=int, default=1111,
                     help='random seed (default: 1111)')
+
 
 args = parser.parse_args()
 
@@ -53,7 +54,10 @@ n_channels = [args.nhid] * args.levels
 kernel_size = args.ksize
 dropout = args.dropout
 
-model = TCN(input_size, input_size, n_channels, kernel_size, dropout=args.dropout)
+
+model = torch.load(open("piano_transcription_MAPS_fold_1.pt", "rb"))
+
+#model = TCN(input_size, input_size, n_channels, kernel_size, dropout=args.dropout)
 
 
 if args.cuda:
@@ -69,11 +73,12 @@ def evaluate(X_data, Y_data):
     eval_idx_list = np.arange(len(X_data), dtype="int32")
     total_loss = 0.0
     count = 0
-    total_tp = 0
-    total_fp = 0
-    total_tn = 0
-    total_fn = 0
+    total_p = 0.0
+    total_r = 0.0
+    total_f1 = 0.0
+    total_a = 0.0
     for idx in eval_idx_list:
+
         #data_line = X_data[idx]
         #x, y = Variable(data_line[:-1]), Variable(data_line[1:])
         x = Variable(X_data[idx])
@@ -87,17 +92,23 @@ def evaluate(X_data, Y_data):
 
         #loss = log_loss(y, output)
         tp, fp, tn, fn = eval_framewise(output, y)
-        total_tp += tp
-        total_fp += fp
-        total_tn += tn
-        total_fn += fn
+        p, r, f1, a = prf_framewise(tp, fp, tn, fn)
+        total_p += p
+        total_r += r
+        total_f1 += f1
+        total_a += a
         total_loss += loss.item()
         count += output.size(0)
 
-    p, r, f1, a = prf_framewise(total_tp, total_fp, total_tn, total_fn)
+    steps = len(eval_idx_list)
+
+    mean_p = total_p / steps
+    mean_r = total_r / steps
+    mean_f1 = total_f1 / steps
+    mean_a = total_a / steps
     eval_loss = total_loss / count
     print("Validation/Test loss: {:.5f}".format(eval_loss))
-    print("P: {:.5f} / R: {:.5f} / F1: {:.5f} / A: {:.5f}".format(p, r, f1, a))
+    print("P: {:.5f} / R: {:.5f} / F1: {:.5f} / A: {:.5f}".format(mean_p, mean_r, mean_f1, mean_a))
     return eval_loss
 
 
@@ -208,16 +219,19 @@ if __name__ == "__main__":
     best_vloss = 1e8
     vloss_list = []
     model_name = "piano_transcription_{0}.pt".format(args.data)
+    #vloss = evaluate(valid_features, valid_labels)
     for ep in range(1, args.epochs+1):
         train(ep)
+        print("Evaluating!")
         vloss = evaluate(valid_features, valid_labels)
+        print("Testing!")
         tloss = evaluate(test_features, test_labels)
         if vloss < best_vloss:
             with open(model_name, "wb") as f:
                 torch.save(model, f)
                 print("Saved model!\n")
             best_vloss = vloss
-        if ep > 10 and vloss > max(vloss_list[-3:]):
+        if ep > 5 and vloss > max(vloss_list[-3:]):
             lr /= 10
             for param_group in optimizer.param_groups:
                 param_group['lr'] = lr

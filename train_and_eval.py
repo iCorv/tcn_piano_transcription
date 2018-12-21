@@ -15,11 +15,11 @@ parser.add_argument('--cuda', action='store_false',
                     help='use CUDA (default: True)')
 parser.add_argument('--dropout', type=float, default=0.25,
                     help='dropout applied to layers (default: 0.25)')
-parser.add_argument('--clip', type=float, default=0.2,
+parser.add_argument('--clip', type=float, default=1e-7,
                     help='gradient clip, -1 means no clip (default: 0.2)')
 parser.add_argument('--epochs', type=int, default=100,
                     help='upper epoch limit (default: 100)')
-parser.add_argument('--ksize', type=int, default=5,
+parser.add_argument('--ksize', type=int, default=3,
                     help='kernel size (default: 5)')
 parser.add_argument('--levels', type=int, default=4,
                     help='# of levels (default: 4)')

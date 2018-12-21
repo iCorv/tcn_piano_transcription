@@ -29,7 +29,7 @@ parser.add_argument('--lr', type=float, default=1e-3,
                     help='initial learning rate (default: 1e-3)')
 parser.add_argument('--optim', type=str, default='Adam',
                     help='optimizer to use (default: Adam)')
-parser.add_argument('--nhid', type=int, default=150,
+parser.add_argument('--nhid', type=int, default=100,
                     help='number of hidden units per layer (default: 150)')
 parser.add_argument('--data', type=str, default='MAPS_fold_1',
                     help='the dataset to run (default: MAPS_fold_1)')
@@ -55,9 +55,9 @@ kernel_size = args.ksize
 dropout = args.dropout
 
 
-model = torch.load(open("piano_transcription_MAPS_fold_1.pt", "rb"))
+#model = torch.load(open("piano_transcription_MAPS_fold_1.pt", "rb"))
 
-#model = TCN(input_size, input_size, n_channels, kernel_size, dropout=args.dropout)
+model = TCN(input_size, input_size, n_channels, kernel_size, dropout=args.dropout)
 
 
 if args.cuda:

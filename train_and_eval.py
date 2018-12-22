@@ -19,13 +19,13 @@ parser.add_argument('--clip', type=float, default=0.2,
                     help='gradient clip, -1 means no clip (default: 0.2)')
 parser.add_argument('--epochs', type=int, default=100,
                     help='upper epoch limit (default: 100)')
-parser.add_argument('--ksize', type=int, default=3,
+parser.add_argument('--ksize', type=int, default=5,
                     help='kernel size (default: 5)')
-parser.add_argument('--levels', type=int, default=5,
+parser.add_argument('--levels', type=int, default=4,
                     help='# of levels (default: 4)')
 parser.add_argument('--log-interval', type=int, default=100, metavar='N',
                     help='report interval (default: 100')
-parser.add_argument('--lr', type=float, default=1e-3,
+parser.add_argument('--lr', type=float, default=1e-2,
                     help='initial learning rate (default: 1e-3)')
 parser.add_argument('--optim', type=str, default='Adam',
                     help='optimizer to use (default: Adam)')
@@ -53,7 +53,7 @@ train_features, train_labels, valid_features, valid_labels, test_features, test_
 n_channels = [args.nhid] * args.levels
 kernel_size = args.ksize
 dropout = args.dropout
-
+loss_scale = 10000.0
 
 #model = torch.load(open("piano_transcription_MAPS_fold_1.pt", "rb"))
 
@@ -90,7 +90,7 @@ def evaluate(X_data, Y_data):
         #loss = -torch.trace(torch.matmul(y, torch.log(output).float().t()) +
         #                    torch.matmul((1-y), torch.log(1-output).float().t()))
 
-        loss = log_loss(y, output)
+        loss = log_loss(y, output) * loss_scale
         tp, fp, tn, fn = eval_framewise(output, y)
         p, r, f1, a = prf_framewise(tp, fp, tn, fn)
         total_p += p
@@ -136,7 +136,7 @@ def train(ep):
         output = model(x.unsqueeze(0)).squeeze(0)
         #loss = -torch.trace(torch.matmul(y, torch.log(output).float().t()) +
         #                    torch.matmul((1 - y), torch.log(1 - output).float().t()))
-        loss = log_loss(y, output)
+        loss = log_loss(y, output) * loss_scale
         total_loss += loss.item()
         count += output.size(0)
 

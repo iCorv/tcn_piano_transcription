@@ -31,7 +31,7 @@ parser.add_argument('--optim', type=str, default='Adam',
                     help='optimizer to use (default: Adam)')
 parser.add_argument('--nhid', type=int, default=150,
                     help='number of hidden units per layer (default: 150)')
-parser.add_argument('--data', type=str, default='fold_benchmark',
+parser.add_argument('--data', type=str, default='fold_1',
                     help='the dataset to run (default: MAPS_fold_1)')
 parser.add_argument('--seed', type=int, default=1111,
                     help='random seed (default: 1111)')

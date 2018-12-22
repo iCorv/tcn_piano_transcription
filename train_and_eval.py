@@ -31,7 +31,7 @@ parser.add_argument('--optim', type=str, default='Adam',
                     help='optimizer to use (default: Adam)')
 parser.add_argument('--nhid', type=int, default=150,
                     help='number of hidden units per layer (default: 150)')
-parser.add_argument('--data', type=str, default='MAPS_fold_1',
+parser.add_argument('--data', type=str, default='fold_benchmark',
                     help='the dataset to run (default: MAPS_fold_1)')
 parser.add_argument('--seed', type=int, default=1111,
                     help='random seed (default: 1111)')
@@ -48,7 +48,7 @@ if torch.cuda.is_available():
 print(args)
 input_size = 88
 #X_train, X_valid, X_test = data_generator(args.data)
-train_features, train_labels, valid_features, valid_labels, test_features, test_labels = stage_dataset()
+train_features, train_labels, valid_features, valid_labels, test_features, test_labels = stage_dataset(args.data)
 
 n_channels = [args.nhid] * args.levels
 kernel_size = args.ksize

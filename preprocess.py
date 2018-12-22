@@ -155,12 +155,12 @@ def write_file_to_tfrecords(write_file, base_dir, read_file, audio_config, norm,
     savemat(write_file, {"features": spectrogram, "labels": ground_truth})
 
 
-def stage_dataset():
+def stage_dataset(fold):
     chunk = 2000
     inference_chunk = 10000
-    train_files = glob.glob("./dataset/sigtia-configuration2-splits/fold_benchmark/train/*.mat")
-    valid_files = glob.glob("./dataset/sigtia-configuration2-splits/fold_benchmark/valid/*.mat")
-    test_files = glob.glob("./dataset/sigtia-configuration2-splits/fold_benchmark/test/*.mat")
+    train_files = glob.glob("./dataset/sigtia-configuration2-splits/{}/train/*.mat".format(fold))
+    valid_files = glob.glob("./dataset/sigtia-configuration2-splits/{}/valid/*.mat".format(fold))
+    test_files = glob.glob("./dataset/sigtia-configuration2-splits/{}/test/*.mat".format(fold))
     train_features = []
     train_labels = []
     valid_features = []

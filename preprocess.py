@@ -170,8 +170,7 @@ def stage_dataset(fold):
     for file in train_files:
         data = loadmat(file)
         #train_features.append(data["features"])
-        f = np.log(1.0 + data["features"])
-        tensor_features = torch.Tensor((f/np.max(f)).astype(np.float64))
+        tensor_features = torch.Tensor(data["features"].astype(np.float64))
         train_features.extend(tensor_features.split(chunk, dim=0))
         #train_labels.append(data["labels"])
         tensor_labels = torch.Tensor(data["labels"].astype(np.float64))
@@ -179,8 +178,7 @@ def stage_dataset(fold):
     for file in valid_files:
         data = loadmat(file)
         # train_features.append(data["features"])
-        f = np.log(1.0 + data["features"])
-        tensor_features = torch.Tensor((f / np.max(f)).astype(np.float64))
+        tensor_features = torch.Tensor(data["features"].astype(np.float64))
         valid_features.extend(tensor_features.split(inference_chunk, dim=0))
         # train_labels.append(data["labels"])
         tensor_labels = torch.Tensor(data["labels"].astype(np.float64))
@@ -188,8 +186,7 @@ def stage_dataset(fold):
     for file in test_files:
         data = loadmat(file)
         # train_features.append(data["features"])
-        f = np.log(1.0 + data["features"])
-        tensor_features = torch.Tensor((f / np.max(f)).astype(np.float64))
+        tensor_features = torch.Tensor(data["features"].astype(np.float64))
         test_features.extend(tensor_features.split(inference_chunk, dim=0))
         # train_labels.append(data["labels"])
         tensor_labels = torch.Tensor(data["labels"].astype(np.float64))

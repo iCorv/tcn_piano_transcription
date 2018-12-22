@@ -15,13 +15,13 @@ parser.add_argument('--cuda', action='store_false',
                     help='use CUDA (default: True)')
 parser.add_argument('--dropout', type=float, default=0.25,
                     help='dropout applied to layers (default: 0.25)')
-parser.add_argument('--clip', type=float, default=-1,
+parser.add_argument('--clip', type=float, default=0.2,
                     help='gradient clip, -1 means no clip (default: 0.2)')
 parser.add_argument('--epochs', type=int, default=100,
                     help='upper epoch limit (default: 100)')
 parser.add_argument('--ksize', type=int, default=5,
                     help='kernel size (default: 5)')
-parser.add_argument('--levels', type=int, default=4,
+parser.add_argument('--levels', type=int, default=3,
                     help='# of levels (default: 4)')
 parser.add_argument('--log-interval', type=int, default=100, metavar='N',
                     help='report interval (default: 100')
@@ -29,7 +29,7 @@ parser.add_argument('--lr', type=float, default=1e-2,
                     help='initial learning rate (default: 1e-3)')
 parser.add_argument('--optim', type=str, default='Adam',
                     help='optimizer to use (default: Adam)')
-parser.add_argument('--nhid', type=int, default=250,
+parser.add_argument('--nhid', type=int, default=300,
                     help='number of hidden units per layer (default: 150)')
 parser.add_argument('--data', type=str, default='fold_benchmark',
                     help='the dataset to run (default: MAPS_fold_1)')
@@ -90,7 +90,8 @@ def evaluate(X_data, Y_data):
         #loss = -torch.trace(torch.matmul(y, torch.log(output).float().t()) +
         #                    torch.matmul((1-y), torch.log(1-output).float().t()))
 
-        loss = log_loss(y, torch.clamp(output, 1e-4, 1.0 - 1e-4)) * loss_scale
+        #loss = log_loss(y, torch.clamp(output, 1e-7, 1.0 - 1e-7)) * loss_scale
+        loss = log_loss(y, output) * loss_scale
         tp, fp, tn, fn = eval_framewise(output, y)
         p, r, f1, a = prf_framewise(tp, fp, tn, fn)
         total_p += p
@@ -136,7 +137,8 @@ def train(ep):
         output = model(x.unsqueeze(0)).squeeze(0)
         #loss = -torch.trace(torch.matmul(y, torch.log(output).float().t()) +
         #                    torch.matmul((1 - y), torch.log(1 - output).float().t()))
-        loss = log_loss(y, torch.clamp(output, 1e-7, 1.0-1e-7)) * loss_scale
+        #loss = log_loss(y, torch.clamp(output, 1e-7, 1.0-1e-7)) * loss_scale
+        loss = log_loss(y, output) * loss_scale
         total_loss += loss.item()
         count += output.size(0)
 
@@ -224,8 +226,8 @@ if __name__ == "__main__":
         train(ep)
         print("Evaluating!")
         vloss = evaluate(valid_features, valid_labels)
-        print("Testing!")
-        tloss = evaluate(test_features, test_labels)
+        #print("Testing!")
+        #tloss = evaluate(test_features, test_labels)
         if vloss < best_vloss:
             with open(model_name, "wb") as f:
                 torch.save(model, f)

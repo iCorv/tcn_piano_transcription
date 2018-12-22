@@ -156,7 +156,7 @@ def write_file_to_tfrecords(write_file, base_dir, read_file, audio_config, norm,
 
 
 def stage_dataset(fold):
-    chunk = 128
+    chunk = 2000
     inference_chunk = 10000
     train_files = glob.glob("./dataset/sigtia-configuration2-splits/{}/train/*.mat".format(fold))
     valid_files = glob.glob("./dataset/sigtia-configuration2-splits/{}/valid/*.mat".format(fold))

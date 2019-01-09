@@ -24,13 +24,13 @@ parser.add_argument('--ksize', type=int, default=2,
                     help='kernel size (default: 5)')
 parser.add_argument('--levels', type=int, default=2,
                     help='# of levels (default: 4)')
-parser.add_argument('--log-interval', type=int, default=100, metavar='N',
+parser.add_argument('--log-interval', type=int, default=1000, metavar='N',
                     help='report interval (default: 100')
 parser.add_argument('--lr', type=float, default=1e-3,
                     help='initial learning rate (default: 1e-3)')
 parser.add_argument('--optim', type=str, default='Adam',
                     help='optimizer to use (default: Adam)')
-parser.add_argument('--nhid', type=int, default=512,
+parser.add_argument('--nhid', type=int, default=256,
                     help='number of hidden units per layer (default: 150)')
 parser.add_argument('--data', type=str, default='fold_benchmark',
                     help='the dataset to run (default: MAPS_fold_1)')
@@ -78,15 +78,16 @@ optimizer = getattr(optim, args.optim)(list(model.parameters())+list(conv_model.
 
 def evaluate(X_data, Y_data):
     model.eval()
-    eval_idx_list = np.arange(len(X_data), dtype="int32")
+    shuffle_idx_list = np.arange(len(X_data), dtype="int32")
     total_loss = 0.0
     count = 0
     total_p = 0.0
     total_r = 0.0
     total_f1 = 0.0
     total_a = 0.0
-    X_train_batch = batchify(X_data, eval_idx_list, 64)
-    Y_train_batch = batchify(Y_data, eval_idx_list, 64)
+    X_train_batch = batchify(X_data, shuffle_idx_list, 128)
+    Y_train_batch = batchify(Y_data, shuffle_idx_list, 128)
+    eval_idx_list = np.arange(len(X_train_batch), dtype="int32")
     for idx in eval_idx_list:
 
         #data_line = X_data[idx]
@@ -133,8 +134,8 @@ def train(ep):
     shuffle_idx_list = np.arange(len(train_features), dtype="int32")
 
     np.random.shuffle(shuffle_idx_list)
-    X_train_batch = batchify(train_features, shuffle_idx_list, 64)
-    Y_train_batch = batchify(train_labels, shuffle_idx_list, 64)
+    X_train_batch = batchify(train_features, shuffle_idx_list, 128)
+    Y_train_batch = batchify(train_labels, shuffle_idx_list, 128)
     print(X_train_batch[1].shape)
 
     train_idx_list = np.arange(len(X_train_batch), dtype="int32")
@@ -238,7 +239,8 @@ def prf_framewise(tp, fp, tn, fn):
 if __name__ == "__main__":
     best_vloss = 1e8
     vloss_list = []
-    model_name = "piano_transcription_{0}.pt".format(args.data)
+    model_name1 = "piano_transcription_tcn_{0}.pt".format(args.data)
+    model_name2 = "piano_transcription_cnn_{0}.pt".format(args.data)
     #vloss = evaluate(valid_features, valid_labels)
     for ep in range(1, args.epochs+1):
         train(ep)
@@ -247,8 +249,10 @@ if __name__ == "__main__":
         #print("Testing!")
         #tloss = evaluate(test_features, test_labels)
         if vloss < best_vloss:
-            with open(model_name, "wb") as f:
+            with open(model_name1, "wb") as f:
                 torch.save(model, f)
+            with open(model_name2, "wb") as f:
+                torch.save(conv_model, f)
                 print("Saved model!\n")
             best_vloss = vloss
         if ep > 5 and vloss > max(vloss_list[-3:]):
@@ -260,5 +264,6 @@ if __name__ == "__main__":
         vloss_list.append(vloss)
 
     print('-' * 89)
-    model = torch.load(open(model_name, "rb"))
+    model = torch.load(open(model_name1, "rb"))
+    conv_model = torch.load(open(model_name2, "rb"))
     tloss = evaluate(test_features, test_labels)

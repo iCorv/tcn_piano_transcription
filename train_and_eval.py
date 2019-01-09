@@ -23,7 +23,7 @@ parser.add_argument('--ksize', type=int, default=3,
                     help='kernel size (default: 5)')
 parser.add_argument('--levels', type=int, default=4,
                     help='# of levels (default: 4)')
-parser.add_argument('--log-interval', type=int, default=10000, metavar='N',
+parser.add_argument('--log-interval', type=int, default=1000, metavar='N',
                     help='report interval (default: 100')
 parser.add_argument('--lr', type=float, default=1e-2,
                     help='initial learning rate (default: 1e-3)')

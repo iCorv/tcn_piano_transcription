@@ -29,7 +29,7 @@ class ConvNet(torch.nn.Module):
         # Size changes from (18, 32, 32) to (18, 16, 16)
         x = self.pool(x)
 
-        # Reshape data to input to the input layer of the neural net
+        # Reshape data to the input layer of the neural net
         # Size changes from (18, 16, 16) to (1, 4608)
         # Recall that the -1 infers this dimension from the other given dimension
         x = x.view(-1, 18 * 16 * 16)

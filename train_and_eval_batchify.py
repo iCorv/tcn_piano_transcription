@@ -26,7 +26,7 @@ parser.add_argument('--levels', type=int, default=2,
                     help='# of levels (default: 4)')
 parser.add_argument('--log-interval', type=int, default=100, metavar='N',
                     help='report interval (default: 100')
-parser.add_argument('--lr', type=float, default=1e-2,
+parser.add_argument('--lr', type=float, default=1e-3,
                     help='initial learning rate (default: 1e-3)')
 parser.add_argument('--optim', type=str, default='Adam',
                     help='optimizer to use (default: Adam)')
@@ -69,6 +69,7 @@ model = TCN(input_size, output_size, n_channels, kernel_size, dropout=args.dropo
 
 if args.cuda:
     model.cuda()
+    conv_model.cuda()
 
 #criterion = nn.CrossEntropyLoss()
 lr = args.lr

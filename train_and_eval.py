@@ -82,8 +82,8 @@ def evaluate(X_data, Y_data):
 
         #data_line = X_data[idx]
         #x, y = Variable(data_line[:-1]), Variable(data_line[1:])
-        x = Variable(train_features[idx][5:])
-        y = Variable(train_labels[idx][:-5])
+        x = Variable(X_data[idx])
+        y = Variable(Y_data[idx])
 
         if args.cuda:
             x, y = x.cuda(), y.cuda()
@@ -127,8 +127,8 @@ def train(ep):
         #data_line = X_train[idx]
         #print(train_features[idx].size())
         #x, y = Variable(data_line[:-1]), Variable(data_line[1:])
-        x = Variable(train_features[idx][5:])
-        y = Variable(train_labels[idx][:-5])
+        x = Variable(train_features[idx])
+        y = Variable(train_labels[idx])
 
 
         if args.cuda:
@@ -234,8 +234,8 @@ if __name__ == "__main__":
                 torch.save(model, f)
                 print("Saved model!\n")
             best_vloss = vloss
-        #if ep > 5 and vloss > max(vloss_list[-3:]):
-        if ep % 5 == 0:
+        if ep > 5 and vloss > max(vloss_list[-3:]):
+        #if ep % 5 == 0:
             lr /= 10
             for param_group in optimizer.param_groups:
                 param_group['lr'] = lr

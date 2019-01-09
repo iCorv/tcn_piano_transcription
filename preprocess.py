@@ -1,6 +1,7 @@
 from scipy.io import loadmat
 from scipy.io import savemat
 import torch
+import torch.nn.functional as F
 import numpy as np
 import glob
 import madmom
@@ -156,7 +157,7 @@ def write_file_to_mat(write_file, base_dir, read_file, audio_config, norm, is_ch
 
 
 def stage_dataset(fold):
-    chunk = 10000
+    chunk = 50
     inference_chunk = 10000
     train_files = glob.glob("./dataset/sigtia-configuration2-splits/{}/train/*.mat".format(fold))
     valid_files = glob.glob("./dataset/sigtia-configuration2-splits/{}/valid/*.mat".format(fold))
@@ -197,6 +198,27 @@ def stage_dataset(fold):
     #        data[i] = torch.Tensor(data[i].astype(np.float64))
 
     return train_features, train_labels, valid_features, valid_labels, test_features, test_labels
+
+
+def batchify(data, train_idx_list, batch_size):
+    chunk = 50
+    batch_data = []
+    ii = 0
+    print(data[train_idx_list[0]].shape)
+    curr_batch = F.pad(data[train_idx_list[0]], pad=[0, 0, 0, chunk-data[train_idx_list[0]].shape[0]], mode='constant', value=0).unsqueeze(0)
+    print(curr_batch.shape)
+    for idx in train_idx_list[1:]:
+        if ii == batch_size:
+            ii = 0
+            #print(curr_batch.shape)
+            batch_data.append(curr_batch)
+            curr_batch = F.pad(data[idx], pad=[0, 0, 0, chunk-data[idx].shape[0]], mode='constant', value=0).unsqueeze(0)
+        else:
+            curr_batch = torch.cat((curr_batch, F.pad(data[idx], pad=[0, 0, 0, chunk-data[idx].shape[0]], mode='constant', value=0).unsqueeze(0)), dim=0)
+
+        ii += 1
+    batch_data.append(curr_batch)
+    return batch_data
 
 
 def data_generator(dataset):

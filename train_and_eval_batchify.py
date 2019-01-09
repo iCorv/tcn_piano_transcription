@@ -5,7 +5,7 @@ from torch.autograd import Variable
 import torch.optim as optim
 from model import TCN
 from preprocess import data_generator
-from preprocess import stage_dataset
+from preprocess import stage_dataset, batchify
 import numpy as np
 import time
 
@@ -23,7 +23,7 @@ parser.add_argument('--ksize', type=int, default=3,
                     help='kernel size (default: 5)')
 parser.add_argument('--levels', type=int, default=4,
                     help='# of levels (default: 4)')
-parser.add_argument('--log-interval', type=int, default=10, metavar='N',
+parser.add_argument('--log-interval', type=int, default=100, metavar='N',
                     help='report interval (default: 100')
 parser.add_argument('--lr', type=float, default=1e-2,
                     help='initial learning rate (default: 1e-3)')
@@ -50,7 +50,7 @@ input_size = 185
 output_size = 88
 #X_train, X_valid, X_test = data_generator(args.data)
 train_features, train_labels, valid_features, valid_labels, test_features, test_labels = stage_dataset(args.data)
-print(train_features[1].unsqueeze(0).shape)
+train_features = train_features[:-1]
 
 n_channels = [args.nhid] * args.levels
 kernel_size = args.ksize
@@ -119,24 +119,29 @@ def train(ep):
     model.train()
     total_loss = 0
     count = 0
-    train_idx_list = np.arange(len(train_features), dtype="int32")
+    # dont use last example, since it might be shorter than the others -> see split func in stage_dataset
+    shuffle_idx_list = np.arange(len(train_features), dtype="int32")
 
-    np.random.shuffle(train_idx_list)
+    np.random.shuffle(shuffle_idx_list)
+    X_train_batch = batchify(train_features, shuffle_idx_list, 64)
+    Y_train_batch = batchify(train_labels, shuffle_idx_list, 64)
+    #print(X_train_batch[1].shape)
 
+    train_idx_list = np.arange(len(X_train_batch), dtype="int32")
     t0 = time.time()
     for idx in train_idx_list:
         #data_line = X_train[idx]
         #print(train_features[idx].size())
         #x, y = Variable(data_line[:-1]), Variable(data_line[1:])
-        x = Variable(train_features[idx])
-        y = Variable(train_labels[idx])
+        x = Variable(X_train_batch[idx])
+        y = Variable(Y_train_batch[idx])
 
 
         if args.cuda:
             x, y = x.cuda(), y.cuda()
 
         optimizer.zero_grad()
-        output = model(x.unsqueeze(0)).squeeze(0)
+        output = model(x)
         #loss = -torch.trace(torch.matmul(y, torch.log(output).float().t()) +
         #                    torch.matmul((1 - y), torch.log(1 - output).float().t()))
         #loss = log_loss(y, torch.clamp(output, 1e-7, 1.0-1e-7)) * loss_scale

@@ -35,12 +35,15 @@ class TemporalBlock(nn.Module):
 
     def init_weights(self):
         #self.conv1.weight.data.normal_(0, 0.01)
-        torch.nn.init.kaiming_normal_(self.conv1.weight, a=0, mode='fan_in', nonlinearity='relu')
+        #torch.nn.init.kaiming_normal_(self.conv1.weight, a=0, mode='fan_out', nonlinearity='relu')
+        torch.nn.init.xavier_uniform_(self.conv1.weight, gain=2)
         #self.conv2.weight.data.normal_(0, 0.01)
-        torch.nn.init.kaiming_normal_(self.conv2.weight, a=0, mode='fan_in', nonlinearity='relu')
+        #torch.nn.init.kaiming_normal_(self.conv2.weight, a=0, mode='fan_out', nonlinearity='relu')
+        torch.nn.init.xavier_uniform_(self.conv2.weight, gain=2)
         if self.downsample is not None:
             #self.downsample.weight.data.normal_(0, 0.01)
-            torch.nn.init.kaiming_normal_(self.downsample.weight, a=0, mode='fan_in', nonlinearity='relu')
+            #torch.nn.init.kaiming_normal_(self.downsample.weight, a=0, mode='fan_out', nonlinearity='relu')
+            torch.nn.init.xavier_uniform_(self.downsample.weight, gain=2)
 
     def forward(self, x):
         out = self.net(x)

@@ -19,7 +19,7 @@ def get_preprocessing_parameters(fold_num):
               'chord_fold': './splits/chord-splits/train',
               'chroma_folder': './chroma/',
               'is_chroma': False,
-              'is_hpcp': True,
+              'is_hpcp': False,
               'audio_config': {'num_channels': 1,
                                'sample_rate': 44100,
                                'filterbank': 'LogarithmicFilterbank',

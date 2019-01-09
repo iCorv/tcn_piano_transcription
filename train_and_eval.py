@@ -15,21 +15,21 @@ parser.add_argument('--cuda', action='store_false',
                     help='use CUDA (default: True)')
 parser.add_argument('--dropout', type=float, default=0.25,
                     help='dropout applied to layers (default: 0.25)')
-parser.add_argument('--clip', type=float, default=0.2,
+parser.add_argument('--clip', type=float, default=-1,
                     help='gradient clip, -1 means no clip (default: 0.2)')
 parser.add_argument('--epochs', type=int, default=100,
                     help='upper epoch limit (default: 100)')
-parser.add_argument('--ksize', type=int, default=5,
+parser.add_argument('--ksize', type=int, default=3,
                     help='kernel size (default: 5)')
-parser.add_argument('--levels', type=int, default=7,
+parser.add_argument('--levels', type=int, default=4,
                     help='# of levels (default: 4)')
-parser.add_argument('--log-interval', type=int, default=100, metavar='N',
+parser.add_argument('--log-interval', type=int, default=10, metavar='N',
                     help='report interval (default: 100')
 parser.add_argument('--lr', type=float, default=1e-2,
                     help='initial learning rate (default: 1e-3)')
 parser.add_argument('--optim', type=str, default='Adam',
                     help='optimizer to use (default: Adam)')
-parser.add_argument('--nhid', type=int, default=50,
+parser.add_argument('--nhid', type=int, default=150,
                     help='number of hidden units per layer (default: 150)')
 parser.add_argument('--data', type=str, default='fold_benchmark',
                     help='the dataset to run (default: MAPS_fold_1)')
@@ -46,7 +46,8 @@ if torch.cuda.is_available():
         print("WARNING: You have a CUDA device, so you should probably run with --cuda")
 
 print(args)
-input_size = 88
+input_size = 185
+output_size = 88
 #X_train, X_valid, X_test = data_generator(args.data)
 train_features, train_labels, valid_features, valid_labels, test_features, test_labels = stage_dataset(args.data)
 
@@ -55,15 +56,15 @@ kernel_size = args.ksize
 dropout = args.dropout
 loss_scale = 10000.0
 
-#model = torch.load(open("piano_transcription_MAPS_fold_1.pt", "rb"))
+#model = torch.load(open("piano_transcription_fold_benchmark.pt", "rb"))
 
-model = TCN(input_size, input_size, n_channels, kernel_size, dropout=args.dropout)
+model = TCN(input_size, output_size, n_channels, kernel_size, dropout=args.dropout)
 
 
 if args.cuda:
     model.cuda()
 
-criterion = nn.CrossEntropyLoss()
+#criterion = nn.CrossEntropyLoss()
 lr = args.lr
 optimizer = getattr(optim, args.optim)(model.parameters(), lr=lr)
 
@@ -81,8 +82,8 @@ def evaluate(X_data, Y_data):
 
         #data_line = X_data[idx]
         #x, y = Variable(data_line[:-1]), Variable(data_line[1:])
-        x = Variable(X_data[idx])
-        y = Variable(Y_data[idx])
+        x = Variable(train_features[idx][5:])
+        y = Variable(train_labels[idx][:-5])
 
         if args.cuda:
             x, y = x.cuda(), y.cuda()
@@ -126,8 +127,8 @@ def train(ep):
         #data_line = X_train[idx]
         #print(train_features[idx].size())
         #x, y = Variable(data_line[:-1]), Variable(data_line[1:])
-        x = Variable(train_features[idx])
-        y = Variable(train_labels[idx])
+        x = Variable(train_features[idx][5:])
+        y = Variable(train_labels[idx][:-5])
 
 
         if args.cuda:
@@ -233,7 +234,8 @@ if __name__ == "__main__":
                 torch.save(model, f)
                 print("Saved model!\n")
             best_vloss = vloss
-        if ep > 5 and vloss > max(vloss_list[-3:]):
+        #if ep > 5 and vloss > max(vloss_list[-3:]):
+        if ep % 5 == 0:
             lr /= 10
             for param_group in optimizer.param_groups:
                 param_group['lr'] = lr

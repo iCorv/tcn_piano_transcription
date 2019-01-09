@@ -3,13 +3,13 @@ from scipy.io import savemat
 import torch
 import numpy as np
 import glob
-#import madmom
+import madmom
 import os
 import configurations.preprocessing_parameters as ppp
 import warnings
 from joblib import Parallel, delayed
 import multiprocessing
-#from madmom.io import midi
+from madmom.io import midi
 from enum import Enum
 warnings.filterwarnings("ignore")
 
@@ -110,7 +110,7 @@ def preprocess_fold(fold, mode, norm=False):
 
     for file in filenames:
         # split file path string at "/" and take the last split, since it's the actual filename
-        write_file_to_tfrecords(config['dataset_'+mode+'_fold'] + file.split('/')[-1],
+        write_file_to_mat(config['dataset_'+mode+'_fold'] + file.split('/')[-1],
                                 config['audio_path'], file, audio_config, norm,
                                 config['is_chroma'], config['is_hpcp'])
 
@@ -130,7 +130,7 @@ def preprocess_fold_parallel(fold, mode, norm=False):
 
     def parallel_loop(file):
         # split file path string at "/" and take the last split, since it's the actual filename
-        write_file_to_tfrecords(config['dataset_'+mode+'_fold'] + file.split('/')[-1],
+        write_file_to_mat(config['dataset_'+mode+'_fold'] + file.split('/')[-1],
                                 config['audio_path'], file, audio_config, norm,
                                 config['is_chroma'], config['is_hpcp'])
 
@@ -139,7 +139,7 @@ def preprocess_fold_parallel(fold, mode, norm=False):
     Parallel(n_jobs=num_cores)(delayed(parallel_loop)(file) for file in filenames)
 
 
-def write_file_to_tfrecords(write_file, base_dir, read_file, audio_config, norm, is_chroma, is_hpcp):
+def write_file_to_mat(write_file, base_dir, read_file, audio_config, norm, is_chroma, is_hpcp):
     """Transforms a wav and mid file to features and writes them to a mat file."""
     if is_hpcp:
         spectrogram = wav_to_hpcp(base_dir, read_file)
@@ -156,7 +156,7 @@ def write_file_to_tfrecords(write_file, base_dir, read_file, audio_config, norm,
 
 
 def stage_dataset(fold):
-    chunk = 2000
+    chunk = 10000
     inference_chunk = 10000
     train_files = glob.glob("./dataset/sigtia-configuration2-splits/{}/train/*.mat".format(fold))
     valid_files = glob.glob("./dataset/sigtia-configuration2-splits/{}/valid/*.mat".format(fold))

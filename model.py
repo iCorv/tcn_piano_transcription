@@ -13,5 +13,6 @@ class TCN(nn.Module):
     def forward(self, x):
         # x needs to have dimension (N, C, L) in order to be passed into CNN
         output = self.tcn(x.transpose(1, 2)).transpose(1, 2)
+        #output = self.tcn(x)
         output = self.linear(output).double()
         return self.sig(output)

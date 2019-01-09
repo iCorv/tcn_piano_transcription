@@ -5,9 +5,10 @@ from torch.autograd import Variable
 import torch.optim as optim
 from model import TCN
 from preprocess import data_generator
-from preprocess import stage_dataset, batchify
+from preprocess import stage_dataset, batchify, stage_overlapping_dataset
 import numpy as np
 import time
+from cnn import ConvNet
 
 
 parser = argparse.ArgumentParser(description='Sequence Modeling - Polyphonic Music')
@@ -15,13 +16,13 @@ parser.add_argument('--cuda', action='store_false',
                     help='use CUDA (default: True)')
 parser.add_argument('--dropout', type=float, default=0.25,
                     help='dropout applied to layers (default: 0.25)')
-parser.add_argument('--clip', type=float, default=-1,
+parser.add_argument('--clip', type=float, default=0.2,
                     help='gradient clip, -1 means no clip (default: 0.2)')
 parser.add_argument('--epochs', type=int, default=100,
                     help='upper epoch limit (default: 100)')
-parser.add_argument('--ksize', type=int, default=3,
+parser.add_argument('--ksize', type=int, default=2,
                     help='kernel size (default: 5)')
-parser.add_argument('--levels', type=int, default=4,
+parser.add_argument('--levels', type=int, default=2,
                     help='# of levels (default: 4)')
 parser.add_argument('--log-interval', type=int, default=100, metavar='N',
                     help='report interval (default: 100')
@@ -29,7 +30,7 @@ parser.add_argument('--lr', type=float, default=1e-2,
                     help='initial learning rate (default: 1e-3)')
 parser.add_argument('--optim', type=str, default='Adam',
                     help='optimizer to use (default: Adam)')
-parser.add_argument('--nhid', type=int, default=150,
+parser.add_argument('--nhid', type=int, default=512,
                     help='number of hidden units per layer (default: 150)')
 parser.add_argument('--data', type=str, default='fold_benchmark',
                     help='the dataset to run (default: MAPS_fold_1)')
@@ -46,11 +47,12 @@ if torch.cuda.is_available():
         print("WARNING: You have a CUDA device, so you should probably run with --cuda")
 
 print(args)
-input_size = 185
+input_size = 768
 output_size = 88
 #X_train, X_valid, X_test = data_generator(args.data)
-train_features, train_labels, valid_features, valid_labels, test_features, test_labels = stage_dataset(args.data)
-train_features = train_features[:-1]
+train_features, train_labels, valid_features, valid_labels, test_features, test_labels = stage_overlapping_dataset(args.data)
+
+
 
 n_channels = [args.nhid] * args.levels
 kernel_size = args.ksize
@@ -59,7 +61,10 @@ loss_scale = 10000.0
 
 #model = torch.load(open("piano_transcription_fold_benchmark.pt", "rb"))
 
+conv_model = ConvNet()
+
 model = TCN(input_size, output_size, n_channels, kernel_size, dropout=args.dropout)
+
 
 
 if args.cuda:
@@ -67,7 +72,7 @@ if args.cuda:
 
 #criterion = nn.CrossEntropyLoss()
 lr = args.lr
-optimizer = getattr(optim, args.optim)(model.parameters(), lr=lr)
+optimizer = getattr(optim, args.optim)(list(model.parameters())+list(conv_model.parameters()), lr=lr)
 
 
 def evaluate(X_data, Y_data):
@@ -79,16 +84,20 @@ def evaluate(X_data, Y_data):
     total_r = 0.0
     total_f1 = 0.0
     total_a = 0.0
+    X_train_batch = batchify(X_data, eval_idx_list, 64)
+    Y_train_batch = batchify(Y_data, eval_idx_list, 64)
     for idx in eval_idx_list:
 
         #data_line = X_data[idx]
         #x, y = Variable(data_line[:-1]), Variable(data_line[1:])
-        x = Variable(X_data[idx])
-        y = Variable(Y_data[idx])
+        x = Variable(X_train_batch[idx])
+        y = Variable(Y_train_batch[idx])
 
         if args.cuda:
             x, y = x.cuda(), y.cuda()
-        output = model(x.unsqueeze(0)).squeeze(0)
+        conv_output = conv_model(x.unsqueeze(1))
+        output = model(conv_output)
+        #output = model(x.unsqueeze(0)).squeeze(0)
         #loss = -torch.trace(torch.matmul(y, torch.log(output).float().t()) +
         #                    torch.matmul((1-y), torch.log(1-output).float().t()))
 
@@ -125,7 +134,7 @@ def train(ep):
     np.random.shuffle(shuffle_idx_list)
     X_train_batch = batchify(train_features, shuffle_idx_list, 64)
     Y_train_batch = batchify(train_labels, shuffle_idx_list, 64)
-    #print(X_train_batch[1].shape)
+    print(X_train_batch[1].shape)
 
     train_idx_list = np.arange(len(X_train_batch), dtype="int32")
     t0 = time.time()
@@ -141,7 +150,8 @@ def train(ep):
             x, y = x.cuda(), y.cuda()
 
         optimizer.zero_grad()
-        output = model(x)
+        conv_output = conv_model(x.unsqueeze(1))
+        output = model(conv_output)
         #loss = -torch.trace(torch.matmul(y, torch.log(output).float().t()) +
         #                    torch.matmul((1 - y), torch.log(1 - output).float().t()))
         #loss = log_loss(y, torch.clamp(output, 1e-7, 1.0-1e-7)) * loss_scale

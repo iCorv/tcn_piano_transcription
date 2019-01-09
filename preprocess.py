@@ -157,7 +157,7 @@ def write_file_to_mat(write_file, base_dir, read_file, audio_config, norm, is_ch
 
 
 def stage_dataset(fold):
-    chunk = 50
+    chunk = 20
     inference_chunk = 10000
     train_files = glob.glob("./dataset/sigtia-configuration2-splits/{}/train/*.mat".format(fold))
     valid_files = glob.glob("./dataset/sigtia-configuration2-splits/{}/valid/*.mat".format(fold))
@@ -200,13 +200,73 @@ def stage_dataset(fold):
     return train_features, train_labels, valid_features, valid_labels, test_features, test_labels
 
 
+def chunks(sequence, length):
+    for index in range(0, len(sequence) - length + 1):
+        yield sequence[index:index + length]
+
+
+def stage_overlapping_dataset(fold):
+    context = 2
+    frames = context+context+1
+    train_files = glob.glob("./dataset/sigtia-configuration2-splits/{}/train/*.mat".format(fold))
+    valid_files = glob.glob("./dataset/sigtia-configuration2-splits/{}/valid/*.mat".format(fold))
+    test_files = glob.glob("./dataset/sigtia-configuration2-splits/{}/test/*.mat".format(fold))
+    train_features = []
+    train_labels = []
+    valid_features = []
+    valid_labels = []
+    test_features = []
+    test_labels = []
+    for file in train_files:
+        data = loadmat(file)
+        #for idx in range(context, data["features"].shape[0] - context):
+        #    features = np.reshape(data["features"][idx-context:idx+context+1, :], (1, frames*data["features"].shape[1]))
+        #    train_features.append(torch.Tensor(features.astype(np.float64)))
+        features = torch.Tensor(data["features"].astype(np.float64))
+        train_features.extend(list(chunks(features, 5)))
+
+        tensor_labels = torch.Tensor(data["labels"][context:-context, :].astype(np.float64))
+        train_labels.extend(tensor_labels.split(1, dim=0))
+    for file in valid_files:
+        data = loadmat(file)
+
+        #for idx in range(context, data["features"].shape[0] - context):
+        #    features = np.reshape(data["features"][idx - context:idx + context + 1, :],
+        #                          (1, frames * data["features"].shape[1]))
+        #    valid_features.append(torch.Tensor(features.astype(np.float64)))
+        features = torch.Tensor(data["features"].astype(np.float64))
+        valid_features.extend(list(chunks(features, 5)))
+
+        tensor_labels = torch.Tensor(data["labels"][context:-context, :].astype(np.float64))
+        valid_labels.extend(tensor_labels.split(1, dim=0))
+    for file in test_files:
+        data = loadmat(file)
+
+        #for idx in range(context, data["features"].shape[0] - context):
+        #    features = np.reshape(data["features"][idx - context:idx + context + 1, :],
+        #                          (1, frames * data["features"].shape[1]))
+        #    test_features.append(torch.Tensor(features.astype(np.float64)))
+
+        features = torch.Tensor(data["features"].astype(np.float64))
+        test_features.extend(list(chunks(features, 5)))
+
+        tensor_labels = torch.Tensor(data["labels"][context:-context, :].astype(np.float64))
+        test_labels.extend(tensor_labels.split(1, dim=0))
+
+    #for data in [train_features, train_labels, valid_features, valid_labels]:
+    #    for i in range(len(data)):
+    #        data[i] = torch.Tensor(data[i].astype(np.float64))
+
+    return train_features, train_labels, valid_features, valid_labels, test_features, test_labels
+
+
 def batchify(data, train_idx_list, batch_size):
-    chunk = 50
+    chunk = 5
     batch_data = []
-    ii = 0
-    print(data[train_idx_list[0]].shape)
+    ii = 1
+    #print(data[train_idx_list[0]].shape)
     curr_batch = F.pad(data[train_idx_list[0]], pad=[0, 0, 0, chunk-data[train_idx_list[0]].shape[0]], mode='constant', value=0).unsqueeze(0)
-    print(curr_batch.shape)
+    #print(curr_batch.shape)
     for idx in train_idx_list[1:]:
         if ii == batch_size:
             ii = 0
@@ -217,7 +277,7 @@ def batchify(data, train_idx_list, batch_size):
             curr_batch = torch.cat((curr_batch, F.pad(data[idx], pad=[0, 0, 0, chunk-data[idx].shape[0]], mode='constant', value=0).unsqueeze(0)), dim=0)
 
         ii += 1
-    batch_data.append(curr_batch)
+    #batch_data.append(curr_batch)
     return batch_data
 
 

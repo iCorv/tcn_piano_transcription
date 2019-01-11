@@ -22,7 +22,8 @@ class ConvNet(torch.nn.Module):
         self.pool2 = torch.nn.MaxPool2d(kernel_size=[1, 2], stride=[1, 2], padding=0)
         self.dropout2 = torch.nn.Dropout(p=0.25, inplace=False)
         # 4608 input features, 64 output features (see sizing flow below)
-        self.fc1 = torch.nn.Linear(46*96, 768)
+        #self.fc1 = torch.nn.Linear(46*96, 768)
+        self.fc1 = torch.nn.Linear(22 * 96, 512)
         self.dropout3 = torch.nn.Dropout(p=0.5, inplace=False)
         # 64 input features, 10 output features for our 10 defined classes
         #self.fc2 = torch.nn.Linear(64, 10)

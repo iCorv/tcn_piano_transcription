@@ -27,6 +27,12 @@ class ConvNet(torch.nn.Module):
         self.dropout3 = torch.nn.Dropout(p=0.5, inplace=False)
         # 64 input features, 10 output features for our 10 defined classes
         #self.fc2 = torch.nn.Linear(64, 10)
+        self.init_weights()
+
+    def init_weights(self):
+        torch.nn.init.xavier_uniform_(self.conv1.weight, gain=2)
+        torch.nn.init.xavier_uniform_(self.conv2.weight, gain=2)
+        torch.nn.init.xavier_uniform_(self.conv3.weight, gain=2)
 
     def forward(self, x):
         # Computes the activation of the first convolution

@@ -20,17 +20,17 @@ parser.add_argument('--clip', type=float, default=0.2,
                     help='gradient clip, -1 means no clip (default: 0.2)')
 parser.add_argument('--epochs', type=int, default=100,
                     help='upper epoch limit (default: 100)')
-parser.add_argument('--ksize', type=int, default=2,
+parser.add_argument('--ksize', type=int, default=5,
                     help='kernel size (default: 5)')
-parser.add_argument('--levels', type=int, default=2,
+parser.add_argument('--levels', type=int, default=4,
                     help='# of levels (default: 4)')
-parser.add_argument('--log-interval', type=int, default=1000, metavar='N',
+parser.add_argument('--log-interval', type=int, default=100, metavar='N',
                     help='report interval (default: 100')
 parser.add_argument('--lr', type=float, default=1e-3,
                     help='initial learning rate (default: 1e-3)')
 parser.add_argument('--optim', type=str, default='Adam',
                     help='optimizer to use (default: Adam)')
-parser.add_argument('--nhid', type=int, default=256,
+parser.add_argument('--nhid', type=int, default=128,
                     help='number of hidden units per layer (default: 150)')
 parser.add_argument('--data', type=str, default='fold_benchmark',
                     help='the dataset to run (default: MAPS_fold_1)')
@@ -49,8 +49,9 @@ if torch.cuda.is_available():
 print(args)
 input_size = 768
 output_size = 88
+batch_size = 8
 #X_train, X_valid, X_test = data_generator(args.data)
-train_features, train_labels, valid_features, valid_labels, test_features, test_labels = stage_overlapping_dataset(args.data)
+train_features, train_labels, valid_features, valid_labels, test_features, test_labels = stage_dataset(args.data)
 
 
 
@@ -85,8 +86,8 @@ def evaluate(X_data, Y_data):
     total_r = 0.0
     total_f1 = 0.0
     total_a = 0.0
-    X_train_batch = batchify(X_data, shuffle_idx_list, 128)
-    Y_train_batch = batchify(Y_data, shuffle_idx_list, 128)
+    X_train_batch = batchify(X_data, shuffle_idx_list, batch_size)
+    Y_train_batch = batchify(Y_data, shuffle_idx_list, batch_size)
     eval_idx_list = np.arange(len(X_train_batch), dtype="int32")
     for idx in eval_idx_list:
 
@@ -134,11 +135,12 @@ def train(ep):
     shuffle_idx_list = np.arange(len(train_features), dtype="int32")
 
     np.random.shuffle(shuffle_idx_list)
-    X_train_batch = batchify(train_features, shuffle_idx_list, 128)
-    Y_train_batch = batchify(train_labels, shuffle_idx_list, 128)
+    X_train_batch = batchify(train_features, shuffle_idx_list, batch_size)
+    Y_train_batch = batchify(train_labels, shuffle_idx_list, batch_size)
     print(X_train_batch[1].shape)
 
     train_idx_list = np.arange(len(X_train_batch), dtype="int32")
+    print("Number of batches: " + str(len(X_train_batch)))
     t0 = time.time()
     for idx in train_idx_list:
         #data_line = X_train[idx]

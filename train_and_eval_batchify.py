@@ -22,7 +22,7 @@ parser.add_argument('--epochs', type=int, default=100,
                     help='upper epoch limit (default: 100)')
 parser.add_argument('--ksize', type=int, default=5,
                     help='kernel size (default: 5)')
-parser.add_argument('--levels', type=int, default=4,
+parser.add_argument('--levels', type=int, default=6,
                     help='# of levels (default: 4)')
 parser.add_argument('--log-interval', type=int, default=100, metavar='N',
                     help='report interval (default: 100')
@@ -30,7 +30,7 @@ parser.add_argument('--lr', type=float, default=1e-3,
                     help='initial learning rate (default: 1e-3)')
 parser.add_argument('--optim', type=str, default='Adam',
                     help='optimizer to use (default: Adam)')
-parser.add_argument('--nhid', type=int, default=128,
+parser.add_argument('--nhid', type=int, default=64,
                     help='number of hidden units per layer (default: 150)')
 parser.add_argument('--data', type=str, default='fold_benchmark',
                     help='the dataset to run (default: MAPS_fold_1)')
@@ -47,7 +47,7 @@ if torch.cuda.is_available():
         print("WARNING: You have a CUDA device, so you should probably run with --cuda")
 
 print(args)
-input_size = 512
+input_size = 768
 output_size = 88
 batch_size = 8
 #X_train, X_valid, X_test = data_generator(args.data)

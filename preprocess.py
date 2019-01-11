@@ -157,7 +157,7 @@ def write_file_to_mat(write_file, base_dir, read_file, audio_config, norm, is_ch
 
 
 def stage_dataset(fold):
-    chunk = 120
+    chunk = 500
     inference_chunk = 10000
     train_files = glob.glob("./dataset/sigtia-configuration2-splits/{}/train/*.mat".format(fold))
     valid_files = glob.glob("./dataset/sigtia-configuration2-splits/{}/valid/*.mat".format(fold))
@@ -261,7 +261,7 @@ def stage_overlapping_dataset(fold):
 
 
 def batchify(data, train_idx_list, batch_size):
-    chunk = 120
+    chunk = 500
     batch_data = []
     ii = 1
     #print(data[train_idx_list[0]].shape)

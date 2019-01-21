@@ -55,7 +55,7 @@ if torch.cuda.is_available():
 print(args)
 input_size = 512
 output_size = 88
-batch_size = 8
+batch_size = 64
 #X_train, X_valid, X_test = data_generator(args.data)
 train_features, train_labels, valid_features, valid_labels, test_features, test_labels = stage_dataset(args.data)
 

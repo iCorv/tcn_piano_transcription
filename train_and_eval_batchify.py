@@ -99,7 +99,7 @@ def evaluate(X_data, Y_data):
 
         if args.cuda:
             x, y = x.cuda(), y.cuda()
-        conv_output = conv_model(x.unsqueeze(1))
+        conv_output, activation_fn = conv_model(x.unsqueeze(1))
 
         output = model(conv_output)
         #output = model(x.unsqueeze(0)).squeeze(0)

@@ -22,15 +22,15 @@ parser.add_argument('--epochs', type=int, default=100,
                     help='upper epoch limit (default: 100)')
 parser.add_argument('--ksize', type=int, default=5,
                     help='kernel size (default: 5)')
-parser.add_argument('--levels', type=int, default=6,
+parser.add_argument('--levels', type=int, default=4,
                     help='# of levels (default: 4)')
-parser.add_argument('--log-interval', type=int, default=100, metavar='N',
+parser.add_argument('--log-interval', type=int, default=10, metavar='N',
                     help='report interval (default: 100')
 parser.add_argument('--lr', type=float, default=1e-3,
                     help='initial learning rate (default: 1e-3)')
 parser.add_argument('--optim', type=str, default='Adam',
                     help='optimizer to use (default: Adam)')
-parser.add_argument('--nhid', type=int, default=64,
+parser.add_argument('--nhid', type=int, default=128,
                     help='number of hidden units per layer (default: 150)')
 parser.add_argument('--data', type=str, default='fold_benchmark',
                     help='the dataset to run (default: MAPS_fold_1)')
@@ -72,9 +72,10 @@ if args.cuda:
     model.cuda()
     conv_model.cuda()
 
-#criterion = nn.CrossEntropyLoss()
+
 lr = args.lr
-optimizer = getattr(optim, args.optim)(list(model.parameters())+list(conv_model.parameters()), lr=lr)
+optimizer = getattr(optim, args.optim)(list(model.parameters()), lr=lr)
+optimizer_conv = getattr(optim, args.optim)(list(conv_model.parameters()), lr=lr)
 
 
 def evaluate(X_data, Y_data):
@@ -99,6 +100,7 @@ def evaluate(X_data, Y_data):
         if args.cuda:
             x, y = x.cuda(), y.cuda()
         conv_output = conv_model(x.unsqueeze(1))
+
         output = model(conv_output)
         #output = model(x.unsqueeze(0)).squeeze(0)
         #loss = -torch.trace(torch.matmul(y, torch.log(output).float().t()) +
@@ -154,19 +156,25 @@ def train(ep):
             x, y = x.cuda(), y.cuda()
 
         optimizer.zero_grad()
-        conv_output = conv_model(x.unsqueeze(1))
+        optimizer_conv.zero_grad()
+        conv_output, activation_fn = conv_model(x.unsqueeze(1))
+        activation_fn = torch.clamp(activation_fn, 1e-7, 1.0 - 1e-7)
         output = model(conv_output)
         #loss = -torch.trace(torch.matmul(y, torch.log(output).float().t()) +
         #                    torch.matmul((1 - y), torch.log(1 - output).float().t()))
         #loss = log_loss(y, torch.clamp(output, 1e-7, 1.0-1e-7)) * loss_scale
         loss = log_loss(y, output) * loss_scale
+        loss_conv = log_loss(y, activation_fn) * loss_scale
         total_loss += loss.item()
         count += output.size(0)
 
         if args.clip > 0:
             torch.nn.utils.clip_grad_norm(model.parameters(), args.clip)
-        loss.backward()
+        #loss.backward(retain_graph=True)
+        #loss_conv.backward()
+        torch.autograd.backward([loss, loss_conv])
         optimizer.step()
+        optimizer_conv.step()
         if idx > 0 and idx % args.log_interval == 0:
             cur_loss = total_loss / count
             print("Epoch {:2d} | lr {:.5f} | loss {:.5f} | elapsed time {:.2f} seconds".format(ep, lr, cur_loss, time.time() - t0))

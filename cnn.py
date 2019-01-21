@@ -26,7 +26,8 @@ class ConvNet(torch.nn.Module):
         #self.fc1 = torch.nn.Linear(22 * 96, 512)
         self.dropout3 = torch.nn.Dropout(p=0.5, inplace=False)
         # 64 input features, 10 output features for our 10 defined classes
-        #self.fc2 = torch.nn.Linear(64, 10)
+        self.fc2 = torch.nn.Linear(768, 88)
+        self.sig = nn.Sigmoid()
         self.init_weights()
 
     def init_weights(self):
@@ -68,5 +69,7 @@ class ConvNet(torch.nn.Module):
         #print(x.shape)
         # Computes the second fully connected layer (activation applied later)
         # Size changes from (1, 64) to (1, 10)
-        #x = self.fc2(x)
-        return (x)
+        x_activation = self.fc2(x)
+        x_activation = self.sig(x_activation)
+        #print(x_activation.shape)
+        return (x, x_activation)

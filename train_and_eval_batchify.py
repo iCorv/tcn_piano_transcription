@@ -43,6 +43,10 @@ args = parser.parse_args()
 # Set the random seed manually for reproducibility.
 torch.manual_seed(args.seed)
 if torch.cuda.is_available():
+    #use_cuda = torch.cuda.is_available()
+    #device = torch.device("cuda:0" if use_cuda else "cpu")
+    #cudnn.benchmark = True
+    
     print(torch.cuda.get_device_name(0))
     torch.cuda.set_device(0)
     if not args.cuda:
@@ -91,6 +95,7 @@ def evaluate(X_data, Y_data):
     total_a = 0.0
     X_train_batch = batchify(X_data, shuffle_idx_list, batch_size)
     Y_train_batch = batchify(Y_data, shuffle_idx_list, batch_size)
+
     eval_idx_list = np.arange(len(X_train_batch), dtype="int32")
     for idx in eval_idx_list:
 
@@ -101,6 +106,7 @@ def evaluate(X_data, Y_data):
 
         if args.cuda:
             x, y = x.cuda(), y.cuda()
+
         conv_output, activation_fn = conv_model(x.unsqueeze(1))
 
         output = model(conv_output)
@@ -141,6 +147,8 @@ def train(ep):
     np.random.shuffle(shuffle_idx_list)
     X_train_batch = batchify(train_features, shuffle_idx_list, batch_size)
     Y_train_batch = batchify(train_labels, shuffle_idx_list, batch_size)
+    if args.cuda:
+        X_train_batch, Y_train_batch = X_train_batch.cuda(), Y_train_batch.cuda()
     print(X_train_batch[1].shape)
 
     train_idx_list = np.arange(len(X_train_batch), dtype="int32")
@@ -154,8 +162,8 @@ def train(ep):
         y = Variable(Y_train_batch[idx])
 
 
-        if args.cuda:
-            x, y = x.cuda(), y.cuda()
+        #if args.cuda:
+        #    x, y = x.cuda(), y.cuda()
 
         optimizer.zero_grad()
         optimizer_conv.zero_grad()

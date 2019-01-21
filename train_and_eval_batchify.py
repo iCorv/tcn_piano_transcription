@@ -47,7 +47,7 @@ if torch.cuda.is_available():
         print("WARNING: You have a CUDA device, so you should probably run with --cuda")
 
 print(args)
-input_size = 768
+input_size = 512
 output_size = 88
 batch_size = 8
 #X_train, X_valid, X_test = data_generator(args.data)

@@ -147,6 +147,10 @@ def train(ep):
     np.random.shuffle(shuffle_idx_list)
     X_train_batch = batchify(train_features, shuffle_idx_list, batch_size)
     Y_train_batch = batchify(train_labels, shuffle_idx_list, batch_size)
+    X_train_batch = torch.stack(X_train_batch)
+    Y_train_batch = torch.stack(Y_train_batch)
+    print(X_train_batch.shape)
+    print(X_train_batch[1].shape)
     if args.cuda:
         X_train_batch, Y_train_batch = Variable(X_train_batch).cuda(), Variable(Y_train_batch).cuda()
     print(X_train_batch[1].shape)

@@ -46,7 +46,7 @@ if torch.cuda.is_available():
     #use_cuda = torch.cuda.is_available()
     #device = torch.device("cuda:0" if use_cuda else "cpu")
     #cudnn.benchmark = True
-    
+
     print(torch.cuda.get_device_name(0))
     torch.cuda.set_device(0)
     if not args.cuda:
@@ -148,7 +148,7 @@ def train(ep):
     X_train_batch = batchify(train_features, shuffle_idx_list, batch_size)
     Y_train_batch = batchify(train_labels, shuffle_idx_list, batch_size)
     if args.cuda:
-        X_train_batch, Y_train_batch = X_train_batch.cuda(), Y_train_batch.cuda()
+        X_train_batch, Y_train_batch = Variable(X_train_batch).cuda(), Variable(Y_train_batch).cuda()
     print(X_train_batch[1].shape)
 
     train_idx_list = np.arange(len(X_train_batch), dtype="int32")
@@ -158,9 +158,10 @@ def train(ep):
         #data_line = X_train[idx]
         #print(train_features[idx].size())
         #x, y = Variable(data_line[:-1]), Variable(data_line[1:])
-        x = Variable(X_train_batch[idx])
-        y = Variable(Y_train_batch[idx])
-
+        #x = Variable(X_train_batch[idx])
+        #y = Variable(Y_train_batch[idx])
+        x = X_train_batch[idx]
+        y = Y_train_batch[idx]
 
         #if args.cuda:
         #    x, y = x.cuda(), y.cuda()

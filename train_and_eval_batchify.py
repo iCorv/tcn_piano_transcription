@@ -43,6 +43,8 @@ args = parser.parse_args()
 # Set the random seed manually for reproducibility.
 torch.manual_seed(args.seed)
 if torch.cuda.is_available():
+    print(torch.cuda.get_device_name(0))
+    torch.cuda.set_device(0)
     if not args.cuda:
         print("WARNING: You have a CUDA device, so you should probably run with --cuda")
 
@@ -269,6 +271,8 @@ if __name__ == "__main__":
         #if ep % 5 == 0:
             lr /= 10
             for param_group in optimizer.param_groups:
+                param_group['lr'] = lr
+            for param_group in optimizer_conv.param_groups:
                 param_group['lr'] = lr
 
         vloss_list.append(vloss)

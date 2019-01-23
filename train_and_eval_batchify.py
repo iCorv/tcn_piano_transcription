@@ -53,11 +53,11 @@ if torch.cuda.is_available():
         print("WARNING: You have a CUDA device, so you should probably run with --cuda")
 
 print(args)
-input_size = 88
+input_size = 1
 output_size = 88
 batch_size = 64
 #X_train, X_valid, X_test = data_generator(args.data)
-train_features, train_labels, valid_features, valid_labels, test_features, test_labels = stage_dataset(args.data)
+train_features, train_labels, valid_features, valid_labels, test_features, test_labels = stage_overlapping_dataset(args.data)
 
 
 
@@ -68,7 +68,7 @@ loss_scale = 10000.0
 
 #model = torch.load(open("piano_transcription_fold_benchmark.pt", "rb"))
 
-conv_model = ConvNet()
+#conv_model = ConvNet()
 
 model = TCN(input_size, output_size, n_channels, kernel_size, dropout=args.dropout)
 
@@ -76,12 +76,12 @@ model = TCN(input_size, output_size, n_channels, kernel_size, dropout=args.dropo
 
 if args.cuda:
     model.cuda()
-    conv_model.cuda()
+    #conv_model.cuda()
 
 
 lr = args.lr
 optimizer = getattr(optim, args.optim)(list(model.parameters()), lr=lr)
-optimizer_conv = getattr(optim, args.optim)(list(conv_model.parameters()), lr=lr)
+#optimizer_conv = getattr(optim, args.optim)(list(conv_model.parameters()), lr=lr)
 
 
 def evaluate(X_data, Y_data):
@@ -107,9 +107,9 @@ def evaluate(X_data, Y_data):
         if args.cuda:
             x, y = x.cuda(), y.cuda()
 
-        conv_output, activation_fn = conv_model(x.unsqueeze(1))
+        #conv_output, activation_fn = conv_model(x.unsqueeze(1))
 
-        output = model(activation_fn)
+        output = model(torch.flatten(x, start_dim=1))
         #output = model(x.unsqueeze(0)).squeeze(0)
         #loss = -torch.trace(torch.matmul(y, torch.log(output).float().t()) +
         #                    torch.matmul((1-y), torch.log(1-output).float().t()))
@@ -171,16 +171,17 @@ def train(ep):
         #    x, y = x.cuda(), y.cuda()
 
         optimizer.zero_grad()
-        optimizer_conv.zero_grad()
-        conv_output, activation_fn = conv_model(x.unsqueeze(1))
-        output = model(activation_fn)
-        activation_fn = torch.clamp(activation_fn, 1e-7, 1.0 - 1e-7)
+        #optimizer_conv.zero_grad()
+        #conv_output, activation_fn = conv_model(x.unsqueeze(1))
+        #output = model(activation_fn)
+        output = model(torch.flatten(x, start_dim=1))
+        #activation_fn = torch.clamp(activation_fn, 1e-7, 1.0 - 1e-7)
 
         #loss = -torch.trace(torch.matmul(y, torch.log(output).float().t()) +
         #                    torch.matmul((1 - y), torch.log(1 - output).float().t()))
         #loss = log_loss(y, torch.clamp(output, 1e-7, 1.0-1e-7)) * loss_scale
         loss = log_loss(y, output) * loss_scale
-        loss_conv = log_loss(y, activation_fn) * loss_scale
+        #loss_conv = log_loss(y, activation_fn) * loss_scale
         total_loss += loss.item()
         count += output.size(0)
 
@@ -190,7 +191,7 @@ def train(ep):
         #loss_conv.backward()
         torch.autograd.backward([loss, loss_conv])
         optimizer.step()
-        optimizer_conv.step()
+        #optimizer_conv.step()
         if idx > 0 and idx % args.log_interval == 0:
             cur_loss = total_loss / count
             print("Epoch {:2d} | lr {:.5f} | loss {:.5f} | elapsed time {:.2f} seconds".format(ep, lr, cur_loss, time.time() - t0))
@@ -277,8 +278,8 @@ if __name__ == "__main__":
         if vloss < best_vloss:
             with open(model_name1, "wb") as f:
                 torch.save(model, f)
-            with open(model_name2, "wb") as f:
-                torch.save(conv_model, f)
+            #with open(model_name2, "wb") as f:
+            #    torch.save(conv_model, f)
                 print("Saved model!\n")
             best_vloss = vloss
         if ep > 5 and vloss > max(vloss_list[-3:]):
@@ -286,8 +287,8 @@ if __name__ == "__main__":
             lr /= 10
             for param_group in optimizer.param_groups:
                 param_group['lr'] = lr
-            for param_group in optimizer_conv.param_groups:
-                param_group['lr'] = lr
+            #for param_group in optimizer_conv.param_groups:
+            #    param_group['lr'] = lr
 
         vloss_list.append(vloss)
 

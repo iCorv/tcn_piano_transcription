@@ -206,8 +206,9 @@ def chunks(sequence, length):
 
 
 def stage_overlapping_dataset(fold):
-    context = 2
-    frames = context+context+1
+    context = 7
+    chunk_size = context * 2 + 1
+
     train_files = glob.glob("./dataset/sigtia-configuration2-splits/{}/train/*.mat".format(fold))
     valid_files = glob.glob("./dataset/sigtia-configuration2-splits/{}/valid/*.mat".format(fold))
     test_files = glob.glob("./dataset/sigtia-configuration2-splits/{}/test/*.mat".format(fold))
@@ -223,7 +224,7 @@ def stage_overlapping_dataset(fold):
         #    features = np.reshape(data["features"][idx-context:idx+context+1, :], (1, frames*data["features"].shape[1]))
         #    train_features.append(torch.Tensor(features.astype(np.float64)))
         features = torch.Tensor(data["features"].astype(np.float64))
-        train_features.extend(list(chunks(features, 5)))
+        train_features.extend(list(chunks(features, chunk_size)))
 
         tensor_labels = torch.Tensor(data["labels"][context:-context, :].astype(np.float64))
         train_labels.extend(tensor_labels.split(1, dim=0))
@@ -235,7 +236,7 @@ def stage_overlapping_dataset(fold):
         #                          (1, frames * data["features"].shape[1]))
         #    valid_features.append(torch.Tensor(features.astype(np.float64)))
         features = torch.Tensor(data["features"].astype(np.float64))
-        valid_features.extend(list(chunks(features, 5)))
+        valid_features.extend(list(chunks(features, chunk_size)))
 
         tensor_labels = torch.Tensor(data["labels"][context:-context, :].astype(np.float64))
         valid_labels.extend(tensor_labels.split(1, dim=0))
@@ -248,7 +249,7 @@ def stage_overlapping_dataset(fold):
         #    test_features.append(torch.Tensor(features.astype(np.float64)))
 
         features = torch.Tensor(data["features"].astype(np.float64))
-        test_features.extend(list(chunks(features, 5)))
+        test_features.extend(list(chunks(features, chunk_size)))
 
         tensor_labels = torch.Tensor(data["labels"][context:-context, :].astype(np.float64))
         test_labels.extend(tensor_labels.split(1, dim=0))
@@ -261,7 +262,7 @@ def stage_overlapping_dataset(fold):
 
 
 def batchify(data, train_idx_list, batch_size):
-    chunk = 120
+    chunk = 1
     batch_data = []
     ii = 1
     #print(data[train_idx_list[0]].shape)

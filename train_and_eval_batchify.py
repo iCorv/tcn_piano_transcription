@@ -109,7 +109,7 @@ def evaluate(X_data, Y_data):
 
         conv_output, activation_fn = conv_model(x.unsqueeze(1))
 
-        output = model(conv_output)
+        output = model(activation_fn)
         #output = model(x.unsqueeze(0)).squeeze(0)
         #loss = -torch.trace(torch.matmul(y, torch.log(output).float().t()) +
         #                    torch.matmul((1-y), torch.log(1-output).float().t()))
@@ -173,8 +173,9 @@ def train(ep):
         optimizer.zero_grad()
         optimizer_conv.zero_grad()
         conv_output, activation_fn = conv_model(x.unsqueeze(1))
-        activation_fn = torch.clamp(activation_fn, 1e-7, 1.0 - 1e-7)
         output = model(activation_fn)
+        activation_fn = torch.clamp(activation_fn, 1e-7, 1.0 - 1e-7)
+
         #loss = -torch.trace(torch.matmul(y, torch.log(output).float().t()) +
         #                    torch.matmul((1 - y), torch.log(1 - output).float().t()))
         #loss = log_loss(y, torch.clamp(output, 1e-7, 1.0-1e-7)) * loss_scale

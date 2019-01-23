@@ -30,7 +30,7 @@ parser.add_argument('--lr', type=float, default=1e-3,
                     help='initial learning rate (default: 1e-3)')
 parser.add_argument('--optim', type=str, default='Adam',
                     help='optimizer to use (default: Adam)')
-parser.add_argument('--nhid', type=int, default=128,
+parser.add_argument('--nhid', type=int, default=256,
                     help='number of hidden units per layer (default: 150)')
 parser.add_argument('--data', type=str, default='fold_benchmark',
                     help='the dataset to run (default: MAPS_fold_1)')
@@ -53,7 +53,7 @@ if torch.cuda.is_available():
         print("WARNING: You have a CUDA device, so you should probably run with --cuda")
 
 print(args)
-input_size = 512
+input_size = 88
 output_size = 88
 batch_size = 64
 #X_train, X_valid, X_test = data_generator(args.data)
@@ -174,7 +174,7 @@ def train(ep):
         optimizer_conv.zero_grad()
         conv_output, activation_fn = conv_model(x.unsqueeze(1))
         activation_fn = torch.clamp(activation_fn, 1e-7, 1.0 - 1e-7)
-        output = model(conv_output)
+        output = model(activation_fn)
         #loss = -torch.trace(torch.matmul(y, torch.log(output).float().t()) +
         #                    torch.matmul((1 - y), torch.log(1 - output).float().t()))
         #loss = log_loss(y, torch.clamp(output, 1e-7, 1.0-1e-7)) * loss_scale
